@@ -24,7 +24,7 @@ const HomePage = () => {
     const currentCars = cars.slice(indexOfFirstCar, indexOfLastCar);
 
     return (
-        <Container sx={{ marginTop: '20px' }}>
+        <Container sx={{ margin: '280px auto' }}> {/* Increased margin */}
             <Typography
                 variant="h4"
                 sx={{

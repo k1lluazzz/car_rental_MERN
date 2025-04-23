@@ -44,7 +44,7 @@ const CarCard = ({ car }) => {
                         </Typography>
                     </Box>
                     <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                        {car.pricePerDay}K/ngày
+                        {car.pricePerDay}K/giờ
                     </Typography>
                 </Box>
             </CardContent>
