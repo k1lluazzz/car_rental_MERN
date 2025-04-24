@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const getAllUsers = async (req, res) => {
     try {
@@ -11,34 +12,60 @@ const getAllUsers = async (req, res) => {
 };
 
 const addUser = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, phone, email, password, role } = req.body;
     try {
+        console.log('Registration request body:', req.body); // Debug log
+        if (!email || !password || !name) {
+            return res.status(400).json({ message: 'Name, email, and password are required' });
+        }
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: 'User with this email already exists' });
         }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, email, password: hashedPassword });
+        const newUser = new User({ name, phone, email, password, role });
         await newUser.save();
+        console.log('User registered successfully:', newUser); // Debug log
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error('Error during registration:', err); // Debug log
+        res.status(500).json({ message: 'Server error. Please try again later.' });
     }
 };
 
 const loginUser = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body; // Removed phone
     try {
+        console.log('Login attempt with email:', email); // Debug log
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
         const user = await User.findOne({ email });
         if (!user) {
+            console.log('User not found'); // Debug log
             return res.status(404).json({ message: 'User not found' });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
+        console.log('User found:', user); // Debug log
+        console.log('Password provided:', password); // Debug log
+        console.log('User password:', user.password); // Debug log
+        const isMatch = await bcrypt.compare(req.body.password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+            console.log('Password mismatch'); // Debug log
+            return res.status(400).json({ message: 'Invalid password' });
         }
-        res.status(200).json({ message: 'Login successful', userId: user._id });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        console.log('Login successful for user:', user.email); // Debug log
+        res.status(200).json({
+            message: 'Login successful',
+            token,
+            user: {
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar || 'https://via.placeholder.com/150',
+            },
+        });
     } catch (err) {
+        console.error('Error during login:', err); // Debug log
         res.status(500).json({ message: err.message });
     }
 };

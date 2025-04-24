@@ -4,9 +4,16 @@ const carSchema = new mongoose.Schema({
     name: { type: String, required: true },
     brand: { type: String, required: true },
     pricePerDay: { type: Number, required: true },
-    available: { type: Boolean, default: true }, // Changed from availability to available
-    image: { type: String, required: false }, // URL of the car image
-    
+    available: { type: Boolean, default: true },
+    image: { type: String, required: false },
+    transmission: { type: String, required: true }, // Automatic or Manual
+    seats: { type: Number, required: true }, // Number of seats
+    fuelType: { type: String, required: true }, // Gasoline, Diesel, Electric
+    location: { type: String, required: true }, // Ensure location is required
+    rating: { type: Number, required: false, default: 0 }, // Rating of the car
+    trips: { type: Number, required: false, default: 0 }, // Number of trips
+    discount: { type: Number, required: false, default: 0 }, // Discount percentage
+    deliveryOption: { type: Boolean, required: false, default: false } // Delivery option
 });
 
 module.exports = mongoose.model('Car', carSchema);

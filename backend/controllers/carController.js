@@ -3,7 +3,14 @@ const Car = require('../models/Car');
 // Get all cars
 const getAllCars = async (req, res) => {
     try {
-        const cars = await Car.find();
+        const { location, fuelType, seats } = req.query; // Get filters from query parameters
+        const filter = {};
+
+        if (location) filter.location = location; // Filter by location
+        if (fuelType) filter.fuelType = fuelType; // Filter by fuel type
+        if (seats) filter.seats = parseInt(seats, 10); // Filter by number of seats (convert to integer)
+
+        const cars = await Car.find(filter); // Apply filters to the query
         res.json(cars);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -25,7 +32,7 @@ const getCarById = async (req, res) => {
 const createCar = async (req, res) => {
     const carData = req.body;
     if (req.file) {
-        carData.image = `/uploads/${req.file.filename}`; // Save the correct image path
+        carData.image = req.file.path; // Save the Cloudinary URL
     }
     const car = new Car(carData);
     try {
@@ -39,7 +46,11 @@ const createCar = async (req, res) => {
 // Update a car by ID
 const updateCar = async (req, res) => {
     try {
-        const updatedCar = await Car.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const carData = req.body;
+        if (req.file) {
+            carData.image = req.file.path; // Save the Cloudinary URL
+        }
+        const updatedCar = await Car.findByIdAndUpdate(req.params.id, carData, { new: true });
         if (!updatedCar) return res.status(404).json({ message: 'Car not found' });
         res.json(updatedCar);
     } catch (err) {
