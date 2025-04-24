@@ -29,10 +29,10 @@ const Footer = () => {
                             Tổng đài hỗ trợ: 7AM - 10PM
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            contact@mioto.vn
+                            contact@hdoto.vn
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Gửi mail cho Mioto
+                            Gửi mail cho HDoto
                         </Typography>
                     </Grid>
 
@@ -63,9 +63,9 @@ const Footer = () => {
                         <Typography variant="body1" sx={{ fontWeight: 'bold', marginBottom: '10px' }}>
                             Đối Tác
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">Đăng ký chủ xe Mioto</Typography>
-                        <Typography variant="body2" color="text.secondary">Đăng ký GPS MITRACK 4G</Typography>
-                        <Typography variant="body2" color="text.secondary">Đăng ký cho thuê xe dài hạn MICAR</Typography>
+                        <Typography variant="body2" color="text.secondary">Đăng ký chủ xe HDoto</Typography>
+                        <Typography variant="body2" color="text.secondary">Đăng ký GPS HDTRACK 4G</Typography>
+                        <Typography variant="body2" color="text.secondary">Đăng ký cho thuê xe dài hạn HDCAR</Typography>
                     </Grid>
                 </Grid>
             </Box>

@@ -10,7 +10,7 @@ const CarCard = ({ car }) => {
             <CardMedia
                 component="img"
                 height="180"
-                image={car.image || 'https://via.placeholder.com/345x180'}
+                image={car.image || 'https://via.placeholder.com/345x180'} // Use the Cloudinary URL or a placeholder
                 alt={car.name}
             />
             <CardContent>

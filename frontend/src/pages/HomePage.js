@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Pagination, Box } from '@mui/material';
-import CarCard from '../components/CarCard';
+import { Container, Typography, Box, Button } from '@mui/material';
+import CarList from '../components/CarList';
+import CarForm from '../components/CarForm';
+import EditCarForm from '../components/EditCarForm';
 import axios from 'axios';
 
 const HomePage = () => {
     const [cars, setCars] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const carsPerPage = 10; // 5 cars per row, 2 rows per page
+    const [isAdding, setIsAdding] = useState(false);
+    const [editingCar, setEditingCar] = useState(null);
+    const isLoggedIn = !!localStorage.getItem('token'); // Check if token exists
 
     useEffect(() => {
         axios.get('http://localhost:5000/api/cars')
@@ -14,55 +17,35 @@ const HomePage = () => {
             .catch(error => console.error(error));
     }, []);
 
-    const handlePageChange = (event, value) => {
-        setCurrentPage(value);
+    const handleAddCar = (newCar) => {
+        setCars([...cars, newCar]);
+        setIsAdding(false);
     };
 
-    // Calculate the cars to display on the current page
-    const indexOfLastCar = currentPage * carsPerPage;
-    const indexOfFirstCar = indexOfLastCar - carsPerPage;
-    const currentCars = cars.slice(indexOfFirstCar, indexOfLastCar);
+    const handleUpdateCar = (updatedCar) => {
+        setCars(cars.map(car => (car._id === updatedCar._id ? updatedCar : car)));
+        setEditingCar(null);
+    };
 
     return (
-        <Container sx={{ margin: '280px auto' }}> {/* Increased margin */}
-            <Typography
-                variant="h4"
-                sx={{
-                    fontWeight: 'bold',
-                    marginBottom: '20px',
-                    textAlign: 'center', // Center the title
-                }}
-            >
-                Xe dành cho bạn
+        <Container>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
+                Manage Cars
             </Typography>
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '20px',
-                    justifyContent: 'space-between',
-                }}
-            >
-                {currentCars.map(car => (
-                    <Box
-                        key={car._id}
-                        sx={{
-                            flex: '1 1 calc(20% - 20px)', // 20% width for 5 items per row, minus gap
-                            maxWidth: 'calc(20% - 20px)',
-                        }}
-                    >
-                        <CarCard car={car} />
-                    </Box>
-                ))}
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}> 
-                <Pagination
-                    count={Math.ceil(cars.length / carsPerPage)}
-                    page={currentPage} // Ensure the current page is highlighted
-                    onChange={handlePageChange}
-                    color="primary"
+            {isLoggedIn && (
+                <Button variant="contained" color="primary" onClick={() => setIsAdding(true)}>
+                    Add New Car
+                </Button>
+            )}
+            {isAdding && <CarForm onClose={() => setIsAdding(false)} onAdd={handleAddCar} />}
+            {editingCar && (
+                <EditCarForm
+                    car={editingCar}
+                    onClose={() => setEditingCar(null)}
+                    onUpdate={handleUpdateCar}
                 />
-            </Box>
+            )}
+            <CarList cars={cars} onEdit={setEditingCar} />
         </Container>
     );
 };

@@ -6,6 +6,7 @@ import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CloseIcon from '@mui/icons-material/Close';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = () => {
     const [timeModalOpen, setTimeModalOpen] = useState(false);
@@ -18,6 +19,8 @@ const HeroSection = () => {
         duration: '',
     });
     const [rentalType, setRentalType] = useState('day'); // 'day' or 'hour'
+    const [selectedLocation, setSelectedLocation] = useState('Hà Nội');
+    const navigate = useNavigate();
 
     const handleOptionChange = (field, value) => {
         setSelectedOptions((prev) => ({ ...prev, [field]: value }));
@@ -40,6 +43,14 @@ const HeroSection = () => {
             );
         }
         setTimeModalOpen(false);
+    };
+
+    const handleSearch = () => {
+        if (selectedLocation) {
+            navigate(`/cars?location=${encodeURIComponent(selectedLocation)}`); // Navigate with the location query parameter
+        } else {
+            alert('Vui lòng chọn khu vực.');
+        }
     };
 
     const today = new Date();
@@ -113,7 +124,8 @@ const HeroSection = () => {
                             select
                             variant="outlined"
                             fullWidth
-                            defaultValue="Hà Nội"
+                            value={selectedLocation}
+                            onChange={(e) => setSelectedLocation(e.target.value)}
                         >
                             <MenuItem value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</MenuItem>
                             <MenuItem value="Hà Nội">Hà Nội</MenuItem>
@@ -146,6 +158,7 @@ const HeroSection = () => {
                         variant="contained"
                         color="success"
                         sx={{ marginTop: '25px', padding: '10px 30px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
+                        onClick={handleSearch}
                     >
                         Tìm Xe
                     </Button>
