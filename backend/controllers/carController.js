@@ -3,16 +3,24 @@ const Car = require('../models/Car');
 // Get all cars
 const getAllCars = async (req, res) => {
     try {
-        const { location, fuelType, seats, name, brand } = req.query; // Add name and brand filters
+        const { location, fuelType, seats, name, brand } = req.query;
         const filter = {};
 
-        if (location) filter.location = location;
+        // Updated location filter to be more flexible
+        if (location) {
+            filter.location = { 
+                $regex: location.trim(), 
+                $options: 'i'  // case-insensitive
+            };
+        }
         if (fuelType) filter.fuelType = fuelType;
         if (seats) filter.seats = parseInt(seats, 10);
-        if (name) filter.name = { $regex: name, $options: 'i' }; // Case-insensitive search
-        if (brand) filter.brand = { $regex: brand, $options: 'i' }; // Case-insensitive search
+        if (name) filter.name = { $regex: name, $options: 'i' };
+        if (brand) filter.brand = { $regex: brand, $options: 'i' };
 
+        console.log('Filter:', filter); // Debug log
         const cars = await Car.find(filter);
+        console.log('Found cars:', cars.length); // Debug log
         res.json(cars);
     } catch (err) {
         res.status(500).json({ message: err.message });

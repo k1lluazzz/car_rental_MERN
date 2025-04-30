@@ -7,6 +7,8 @@ const { v2: cloudinary } = require('cloudinary');
 const carRoutes = require('./routes/carRoutes');
 const rentalRoutes = require('./routes/rentalRoutes');
 const userRoutes = require('./routes/userRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 app.use(cors()); // Enable CORS
@@ -26,6 +28,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/cars', carRoutes);
 app.use('/api/rentals', rentalRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
     res.send('Server is running'); // Add this route for testing
