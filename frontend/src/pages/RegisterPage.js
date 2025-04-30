@@ -1,9 +1,31 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Checkbox, FormControlLabel, InputAdornment, IconButton } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { 
+    Box, 
+    Typography, 
+    TextField, 
+    Button, 
+    Checkbox, 
+    FormControlLabel, 
+    InputAdornment, 
+    IconButton, 
+    Container, 
+    Link, 
+    Paper, 
+    Divider 
+} from '@mui/material';
+import {
+    Visibility,
+    VisibilityOff,
+    Person,
+    Email,
+    Phone,
+    Lock,
+    Google,
+    Facebook
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -16,6 +38,11 @@ const RegisterPage = () => {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [toast, setToast] = useState({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -46,122 +73,221 @@ const RegisterPage = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/users/register', {
+            await axios.post('http://localhost:5000/api/users/register', {
                 name,
                 email,
                 phone,
                 password,
             });
-            alert('Registration successful! You can now log in.');
-            navigate('/login'); // Redirect to the login page after registration
+            
+            setToast({
+                open: true,
+                message: 'Đăng ký thành công! Đang chuyển hướng...',
+                severity: 'success'
+            });
+
+            setTimeout(() => {
+                navigate('/login');
+            }, 1500);
         } catch (err) {
-            console.error('Registration error:', err.response?.data || err.message);
-            if (err.response && err.response.data && err.response.data.message) {
-                alert(`Registration failed: ${err.response.data.message}`);
-            } else {
-                alert('Registration failed. Please try again later.');
-            }
+            setToast({
+                open: true,
+                message: err.response?.data?.message || 'Đăng ký thất bại',
+                severity: 'error'
+            });
         }
     };
 
     return (
-        <Box sx={{ maxWidth: 400, margin: '100px auto', padding: '20px', boxShadow: 3, borderRadius: '10px' }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-                Đăng ký
-            </Typography>
-            <form onSubmit={handleSubmit}>
-                <TextField
-                    label="Email"
-                    name="email"
-                    type="email"
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                />
-                <TextField
-                    label="Số điện thoại"
-                    name="phone"
-                    type="text"
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                />
-                <TextField
-                    label="Tên hiển thị"
-                    name="name"
-                    type="text"
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                />
-                <TextField
-                    label="Mật khẩu"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <IconButton onClick={() => setShowPassword(!showPassword)}>
-                                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <TextField
-                    label="Nhập lại mật khẩu"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={formData.agreeToTerms}
-                            onChange={handleCheckboxChange}
-                            required
-                        />
-                    }
-                    label="Tôi đã đọc và đồng ý với Chính sách & quy định."
-                />
-                <Button type="submit" variant="contained" color="success" fullWidth sx={{ mb: 2 }}>
-                    Đăng ký
-                </Button>
-            </form>
-            <Typography variant="body2" sx={{ textAlign: 'center' }}>
-                Bạn đã có tài khoản?{' '}
-                <span
-                    style={{ color: 'blue', cursor: 'pointer' }}
-                    onClick={() => navigate('/login')}
-                >
-                    Đăng nhập
-                </span>
-            </Typography>
-        </Box>
+        <Container maxWidth="sm">
+            <Paper
+                elevation={3}
+                sx={{
+                    mt: 8,
+                    p: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    borderRadius: 2,
+                }}
+            >
+                <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold', color: 'primary.main' }}>
+                    Đăng ký tài khoản
+                </Typography>
+
+                <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        label="Họ tên"
+                        name="name"
+                        autoFocus
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Person color="primary" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                        onChange={handleChange}
+                    />
+
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        label="Email"
+                        name="email"
+                        type="email"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Email color="primary" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                        onChange={handleChange}
+                    />
+
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        label="Số điện thoại"
+                        name="phone"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Phone color="primary" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                        onChange={handleChange}
+                    />
+
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        label="Mật khẩu"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Lock color="primary" />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                        onChange={handleChange}
+                    />
+
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        label="Nhập lại mật khẩu"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Lock color="primary" />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                        onChange={handleChange}
+                    />
+
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={formData.agreeToTerms}
+                                onChange={handleCheckboxChange}
+                                required
+                            />
+                        }
+                        label="Tôi đã đọc và đồng ý với Chính sách & quy định."
+                    />
+
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        sx={{ 
+                            mt: 3, 
+                            mb: 2,
+                            py: 1.2,
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        Đăng ký
+                    </Button>
+
+                    <Box sx={{ textAlign: 'center', mb: 2 }}>
+                        <Link 
+                            onClick={() => navigate('/login')}
+                            sx={{ cursor: 'pointer' }}
+                            underline="hover"
+                        >
+                            Đã có tài khoản? Đăng nhập
+                        </Link>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }}>
+                        <Typography color="text.secondary" sx={{ px: 1 }}>
+                            Hoặc đăng ký với
+                        </Typography>
+                    </Divider>
+
+                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<Google />}
+                            sx={{ py: 1 }}
+                        >
+                            Google
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<Facebook />}
+                            sx={{ py: 1 }}
+                        >
+                            Facebook
+                        </Button>
+                    </Box>
+                </form>
+            </Paper>
+            <Toast
+                open={toast.open}
+                handleClose={() => setToast({ ...toast, open: false })}
+                severity={toast.severity}
+                message={toast.message}
+            />
+        </Container>
     );
 };
 

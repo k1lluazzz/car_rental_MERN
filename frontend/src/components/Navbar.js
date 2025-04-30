@@ -2,17 +2,34 @@ import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import Toast from './Toast';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 const Navbar = () => {
     const { user, updateUser } = useUser();
     const [anchorEl, setAnchorEl] = useState(null);
     const navigate = useNavigate();
+    const [toast, setToast] = useState({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
+
+    // Kiểm tra nếu user là admin
+    const isAdmin = user?.role === 'admin';
 
     const handleLogout = () => {
         updateUser(null);
         localStorage.removeItem('token');
         setAnchorEl(null);
-        navigate('/');
+        setToast({
+            open: true,
+            message: 'Đăng xuất thành công!',
+            severity: 'success'
+        });
+        setTimeout(() => {
+            navigate('/');
+        }, 1000);
     };
 
     const handleMenuOpen = (event) => {
@@ -54,6 +71,24 @@ const Navbar = () => {
                             <Button color="inherit" component={Link} to="/rentals">
                                 Thuê xe
                             </Button>
+
+                            {/* Add Dashboard Icon for Admin */}
+                            {isAdmin && (
+                                <IconButton
+                                    color="inherit"
+                                    onClick={() => navigate('/admin/dashboard')}
+                                    sx={{ 
+                                        ml: 1,
+                                        '&:hover': { 
+                                            color: 'primary.main',
+                                            transform: 'scale(1.1)' 
+                                        }
+                                    }}
+                                >
+                                    <DashboardIcon />
+                                </IconButton>
+                            )}
+
                             <Typography color="text.secondary" sx={{ padding: '0 10px' }}>
                                 |
                             </Typography>
@@ -91,6 +126,7 @@ const Navbar = () => {
                                             horizontal: 'right',
                                         }}
                                     >
+                                      
                                         <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
                                         <MenuItem onClick={() => navigate('/settings')}>Settings</MenuItem>
                                         <MenuItem onClick={handleLogout}>Logout</MenuItem>
@@ -110,6 +146,12 @@ const Navbar = () => {
                     </Box>
                 </Toolbar>
             </AppBar>
+            <Toast
+                open={toast.open}
+                handleClose={() => setToast({ ...toast, open: false })}
+                severity={toast.severity}
+                message={toast.message}
+            />
         </>
     );
 };

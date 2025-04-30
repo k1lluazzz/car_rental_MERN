@@ -1,7 +1,24 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, InputAdornment, IconButton } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { 
+    Box, 
+    Typography, 
+    TextField, 
+    Button, 
+    InputAdornment, 
+    IconButton,
+    Paper,
+    Divider,
+    Link,
+    Container
+} from '@mui/material';
+import { 
+    Visibility, 
+    VisibilityOff,
+    Email,
+    Lock,
+    Google,
+    Facebook 
+} from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Toast from '../components/Toast';
@@ -67,60 +84,128 @@ const LoginPage = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 400, margin: '100px auto', padding: '20px', boxShadow: 3, borderRadius: '10px' }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-                Đăng nhập
-            </Typography>
-            <form onSubmit={handleSubmit}>
-                <TextField
-                    label="Email"
-                    name="email"
-                    type="email"
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                />
-                <TextField
-                    label="Mật khẩu"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                    onChange={handleChange}
-                    required
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <IconButton onClick={() => setShowPassword(!showPassword)}>
-                                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <Button type="submit" variant="contained" color="success" fullWidth sx={{ mb: 2 }}>
+        <Container maxWidth="xs">
+            <Paper
+                elevation={3}
+                sx={{
+                    mt: 8,
+                    p: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    borderRadius: 2,
+                }}
+            >
+                <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold', color: 'primary.main' }}>
                     Đăng nhập
-                </Button>
-            </form>
-            <Typography variant="body2" sx={{ textAlign: 'center' }}>
-                Bạn chưa là thành viên?{' '}
-                <span
-                    style={{ color: 'blue', cursor: 'pointer' }}
-                    onClick={() => navigate('/register')}
-                >
-                    Đăng ký ngay
-                </span>
-            </Typography>
+                </Typography>
+
+                <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        label="Email"
+                        name="email"
+                        autoComplete="email"
+                        autoFocus
+                        onChange={handleChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Email color="primary" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                    />
+
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        name="password"
+                        label="Mật khẩu"
+                        type={showPassword ? 'text' : 'password'}
+                        onChange={handleChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Lock color="primary" />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 2 }}
+                    />
+
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        sx={{ 
+                            mt: 2, 
+                            mb: 2, 
+                            py: 1.2,
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        Đăng nhập
+                    </Button>
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        <Link href="#" underline="hover" sx={{ fontSize: '0.875rem' }}>
+                            Quên mật khẩu?
+                        </Link>
+                        <Link 
+                            onClick={() => navigate('/register')} 
+                            sx={{ cursor: 'pointer', fontSize: '0.875rem' }}
+                            underline="hover"
+                        >
+                            Đăng ký tài khoản mới
+                        </Link>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }}>
+                        <Typography color="text.secondary" sx={{ px: 1 }}>
+                            Hoặc đăng nhập với
+                        </Typography>
+                    </Divider>
+
+                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<Google />}
+                            sx={{ py: 1 }}
+                        >
+                            Google
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<Facebook />}
+                            sx={{ py: 1 }}
+                        >
+                            Facebook
+                        </Button>
+                    </Box>
+                </form>
+            </Paper>
             <Toast
                 open={toast.open}
                 handleClose={() => setToast({ ...toast, open: false })}
                 severity={toast.severity}
                 message={toast.message}
             />
-        </Box>
+        </Container>
     );
 };
 

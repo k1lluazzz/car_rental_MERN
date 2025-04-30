@@ -2,19 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Box, Typography, Grid, TextField, MenuItem, Button, Card, Paper, FormControl, InputLabel, Select, Slider } from '@mui/material';
 import SortIcon from '@mui/icons-material/Sort';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
 import axios from 'axios';
 import CarCard from '../components/CarCard';
 import BookingForm from '../components/BookingForm';
 
 const CarSearchResultsPage = () => {
     const [cars, setCars] = useState([]);
-    const [filters, setFilters] = useState({
-        priceRange: [0, 2000],
+    const [tempFilters, setTempFilters] = useState({
+        priceRange: [0, 1000000],
         brand: '',
         transmission: '',
         seats: '',
-        fuelType: '',
+        fuelType: ''
     });
+
+    const [appliedFilters, setAppliedFilters] = useState({
+        priceRange: [0, 1000000],
+        brand: '',
+        transmission: '',
+        seats: '',
+        fuelType: ''
+    });
+
     const [sortBy, setSortBy] = useState('');
     const [sortedCars, setSortedCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState(null);
@@ -25,59 +36,86 @@ const CarSearchResultsPage = () => {
     const selectedLocation = queryParams.get('location');
 
     useEffect(() => {
-        // Fetch cars based on the selected location
         const fetchCars = async () => {
             try {
+                console.log("Searching for location:", selectedLocation); // Debug log
                 const response = await axios.get('http://localhost:5000/api/cars', {
                     params: {
-                        location: selectedLocation,
-                    },
+                        location: selectedLocation ? selectedLocation.trim() : ''
+                    }
                 });
-                setCars(response.data);
+                console.log("API Response:", response.data); // Debug log
+                if (Array.isArray(response.data)) {
+                    setCars(response.data);
+                    setSortedCars(response.data);
+                } else {
+                    console.error('Invalid response format:', response.data);
+                    setCars([]);
+                    setSortedCars([]);
+                }
             } catch (error) {
-                console.error(error);
+                console.error('Error fetching cars:', error);
+                setCars([]);
+                setSortedCars([]);
             }
         };
-        fetchCars();
+
+        fetchCars(); // Remove the condition to always fetch cars
     }, [selectedLocation]);
 
     useEffect(() => {
-        // Filter cars based on all criteria
-        let filteredResults = cars.filter(car => {
-            return (
-                (!filters.brand || car.brand === filters.brand) &&
-                (!filters.transmission || car.transmission === filters.transmission) &&
-                (!filters.seats || car.seats === Number(filters.seats)) &&
-                (!filters.fuelType || car.fuelType === filters.fuelType) &&
-                car.pricePerDay >= filters.priceRange[0] &&
-                car.pricePerDay <= filters.priceRange[1]
-            );
-        });
+        if (cars.length > 0) {
+            let filteredResults = cars.filter(car => {
+                const matchesBrand = !appliedFilters.brand || car.brand === appliedFilters.brand;
+                const matchesTransmission = !appliedFilters.transmission || car.transmission === appliedFilters.transmission;
+                const matchesSeats = !appliedFilters.seats || car.seats === parseInt(appliedFilters.seats);
+                const matchesFuelType = !appliedFilters.fuelType || car.fuelType === appliedFilters.fuelType;
+                const matchesPrice = car.pricePerDay >= appliedFilters.priceRange[0] && car.pricePerDay <= appliedFilters.priceRange[1];
+                
+                return matchesBrand && matchesTransmission && matchesSeats && matchesFuelType && matchesPrice;
+            });
 
-        // Sort filtered results
-        let sorted = [...filteredResults];
-        switch (sortBy) {
-            case 'price-asc':
-                sorted.sort((a, b) => a.pricePerDay - b.pricePerDay);
-                break;
-            case 'price-desc':
-                sorted.sort((a, b) => b.pricePerDay - a.pricePerDay);
-                break;
-            case 'rating':
-                sorted.sort((a, b) => b.rating - a.rating);
-                break;
-            default:
-                break;
+            // Sort filtered results
+            let sorted = [...filteredResults];
+            switch (sortBy) {
+                case 'price-asc':
+                    sorted.sort((a, b) => a.pricePerDay - b.pricePerDay);
+                    break;
+                case 'price-desc':
+                    sorted.sort((a, b) => b.pricePerDay - a.pricePerDay);
+                    break;
+                case 'rating':
+                    sorted.sort((a, b) => b.rating - a.rating);
+                    break;
+                default:
+                    break;
+            }
+
+            setSortedCars(sorted);
         }
-
-        setSortedCars(sorted);
-    }, [cars, filters, sortBy]);
+    }, [cars, appliedFilters, sortBy]);
 
     const handleFilterChange = (field, value) => {
-        setFilters(prev => ({
+        setTempFilters(prev => ({
             ...prev,
             [field]: value
         }));
+    };
+
+    const handleApplyFilter = () => {
+        setAppliedFilters(tempFilters);
+    };
+
+    const handleClearFilter = () => {
+        const defaultFilters = {
+            priceRange: [0, 1000000],
+            brand: '',
+            transmission: '',
+            seats: '',
+            fuelType: ''
+        };
+        setTempFilters(defaultFilters);
+        setAppliedFilters(defaultFilters);
     };
 
     return (
@@ -97,7 +135,7 @@ const CarSearchResultsPage = () => {
                             select
                             label="Thương hiệu"
                             fullWidth
-                            value={filters.brand}
+                            value={tempFilters.brand}
                             onChange={(e) => handleFilterChange('brand', e.target.value)}
                             sx={{ minWidth: '250px' }}
                         >
@@ -114,7 +152,7 @@ const CarSearchResultsPage = () => {
                             select
                             label="Số ghế"
                             fullWidth
-                            value={filters.seats}
+                            value={tempFilters.seats}
                             onChange={(e) => handleFilterChange('seats', e.target.value)}
                             sx={{ minWidth: '250px' }}
                         >
@@ -131,7 +169,7 @@ const CarSearchResultsPage = () => {
                             select
                             label="Hộp số"
                             fullWidth
-                            value={filters.transmission}
+                            value={tempFilters.transmission}
                             onChange={(e) => handleFilterChange('transmission', e.target.value)}
                             sx={{ minWidth: '250px' }}
                         >
@@ -146,7 +184,7 @@ const CarSearchResultsPage = () => {
                             select
                             label="Nhiên liệu"
                             fullWidth
-                            value={filters.fuelType}
+                            value={tempFilters.fuelType}
                             onChange={(e) => handleFilterChange('fuelType', e.target.value)}
                             sx={{ minWidth: '250px' }}
                         >
@@ -159,19 +197,44 @@ const CarSearchResultsPage = () => {
                     <Grid item xs={12}>
                         <Typography gutterBottom>Giá thuê (K/ngày)</Typography>
                         <Slider
-                            value={filters.priceRange}
+                            value={tempFilters.priceRange}
                             onChange={(e, newValue) => handleFilterChange('priceRange', newValue)}
                             valueLabelDisplay="auto"
                             min={0}
-                            max={2000}
-                            step={50}
+                            max={1000000}
+                            step={50000}
+                            marks={[
+                                { value: 0, label: '0K' },
+                                { value: 250000, label: '250K' },
+                                { value: 500000, label: '500K' },
+                                { value: 750000, label: '750K' },
+                                { value: 1000000, label: '1M' },
+                            ]}
                         />
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography>{filters.priceRange[0]}K</Typography>
-                            <Typography>{filters.priceRange[1]}K</Typography>
+                            <Typography>{tempFilters.priceRange[0]}K</Typography>
+                            <Typography>{tempFilters.priceRange[1]}K</Typography>
                         </Box>
                     </Grid>
-
+                    <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleApplyFilter}
+                                startIcon={<FilterAltIcon />}
+                            >
+                                Áp dụng bộ lọc
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={handleClearFilter}
+                                startIcon={<ClearAllIcon />}
+                            >
+                                Xóa bộ lọc
+                            </Button>
+                        </Box>
+                    </Grid>
                 </Grid>
             </Paper>
 

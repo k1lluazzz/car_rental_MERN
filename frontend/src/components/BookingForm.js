@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button, MenuItem, Modal, Grid, ToggleButton, ToggleButtonGroup, IconButton } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -8,11 +8,13 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 import Toast from './Toast';
+import { useNavigate } from 'react-router-dom';
 
 const BookingForm = ({ carId, onBookingSuccess }) => {
+    const navigate = useNavigate();
     const [timeModalOpen, setTimeModalOpen] = useState(false);
     const [defaultTime, setDefaultTime] = useState('');
-    const [selectedLocation, setSelectedLocation] = useState('Hà Nội');
+    const [selectedLocation, setSelectedLocation] = useState('');
     const [selectedOptions, setSelectedOptions] = useState({
         startDate: new Date(),
         startTime: new Date(),
@@ -28,6 +30,30 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
         severity: 'success',
         message: ''
     });
+    const [calculatedPrice, setCalculatedPrice] = useState(0);
+    const [car, setCar] = useState(null);
+
+    useEffect(() => {
+        const fetchCar = async () => {
+            try {
+                const response = await axios.get(`http://localhost:5000/api/cars/${carId}`);
+                setCar(response.data);
+                // Set the car's location as the selected location
+                setSelectedLocation(response.data.location);
+            } catch (error) {
+                console.error('Error fetching car:', error);
+            }
+        };
+        fetchCar();
+    }, [carId]);
+
+    useEffect(() => {
+        if (car && selectedOptions.startDate && selectedOptions.endDate) {
+            const diffTime = Math.abs(new Date(selectedOptions.endDate) - new Date(selectedOptions.startDate));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            setCalculatedPrice(car.pricePerDay * diffDays);
+        }
+    }, [car, selectedOptions.startDate, selectedOptions.endDate]);
 
     const handleOptionChange = (field, value) => {
         setSelectedOptions((prev) => ({ ...prev, [field]: value }));
@@ -100,7 +126,11 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                 severity: 'success',
                 message: 'Đặt xe thành công!'
             });
-            onBookingSuccess();
+
+            // Redirect to payment page with rental ID
+            setTimeout(() => {
+                navigate(`/payment/${response.data._id}`);
+            }, 1500);
         } catch (error) {
             setToast({
                 open: true,
@@ -129,16 +159,10 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                             <Typography variant="subtitle1" sx={{ marginBottom: '10px' }}>
                                 <LocationOnIcon fontSize="small" /> Địa điểm
                             </Typography>
-                            <TextField
-                                select
-                                fullWidth
-                                value={selectedLocation}
-                                onChange={(e) => setSelectedLocation(e.target.value)}
-                            >
-                                <MenuItem value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</MenuItem>
-                                <MenuItem value="Hà Nội">Hà Nội</MenuItem>
-                                <MenuItem value="Đà Nẵng">Đà Nẵng</MenuItem>
-                            </TextField>
+                            {/* Replace TextField with static display of car location */}
+                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                {car?.location}
+                            </Typography>
                         </Box>
 
                         <Box sx={{ flex: 2 }}>
@@ -153,12 +177,18 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                         </Box>
                     </Box>
 
+                    {calculatedPrice > 0 && (
+                        <Typography variant="h6" sx={{ mt: 2, mb: 2 }}>
+                            Tổng tiền: {calculatedPrice.toLocaleString()}K
+                        </Typography>
+                    )}
+
                     <Button
                         variant="contained"
                         color="primary"
                         fullWidth
                         onClick={handleSubmit}
-                        disabled={loading}
+                        disabled={loading || !calculatedPrice}
                         sx={{ mt: 2 }}
                     >
                         {loading ? 'Đang xử lý...' : (isCustomTimeSelected ? 'Xác nhận đặt xe' : 'Vui lòng chọn thời gian thuê')}

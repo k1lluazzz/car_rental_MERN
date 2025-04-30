@@ -12,7 +12,7 @@ import CarList from '../components/CarList';
 
 const RentalsPage = () => {
     const [filters, setFilters] = useState({
-        priceRange: [0, 2000],
+        priceRange: [0, 5000], // Updated max value to 5000K
         brand: '',
         transmission: '',
         seats: '',
@@ -45,8 +45,14 @@ const RentalsPage = () => {
                             onChange={(e, newValue) => handleFilterChange('priceRange', newValue)}
                             valueLabelDisplay="auto"
                             min={0}
-                            max={2000}
-                            step={50}
+                            max={5000} // Updated max value to 5000K
+                            step={100} // Updated step to 100K
+                            marks={[
+                                { value: 0, label: '0K' },
+                                { value: 1000, label: '1000K' },
+                                { value: 3000, label: '3000K' },
+                                { value: 5000, label: '5000K' },
+                            ]}
                         />
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                             <Typography>{filters.priceRange[0]}K</Typography>

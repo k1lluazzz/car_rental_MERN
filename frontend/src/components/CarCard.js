@@ -3,10 +3,31 @@ import { Card, CardContent, CardMedia, Typography, Box } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { useNavigate } from 'react-router-dom';
 
 const CarCard = ({ car }) => {
+    const navigate = useNavigate();
+
+    const handleCardClick = () => {
+        navigate(`/cars/${car._id}`);
+    };
+
     return (
-        <Card sx={{ maxWidth: 345, margin: 'auto', borderRadius: '10px', boxShadow: 3 }}>
+        <Card 
+            onClick={handleCardClick}
+            sx={{ 
+                maxWidth: 345, 
+                margin: 'auto', 
+                borderRadius: '10px', 
+                boxShadow: 3,
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease-in-out',
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6
+                }
+            }}
+        >
             <CardMedia
                 component="img"
                 height="180"

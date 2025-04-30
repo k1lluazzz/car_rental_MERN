@@ -50,7 +50,7 @@ const AboutPage = () => {
                         <CardMedia
                             component="img"
                             height="300"
-                            image="./images/car2.jpg"
+                            image="./images/car3.jpg"
                             alt="Drive Explore Inspire"
                             sx={{ borderRadius: '10px 10px 0 0' }}
                         />
