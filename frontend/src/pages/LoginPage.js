@@ -2,13 +2,22 @@ import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, InputAdornment, IconButton } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
+import { useUser } from '../contexts/UserContext';
 
 const LoginPage = () => {
     const [credentials, setCredentials] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+    const [toast, setToast] = useState({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
+    const { updateUser } = useUser();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -31,16 +40,29 @@ const LoginPage = () => {
 
             console.log('Login response:', response.data); // Debug log
             localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            alert('Login successful!');
-            navigate('/'); // Redirect to the homepage after login
+            updateUser(response.data.user); // Update user context
+
+            setToast({
+                open: true,
+                message: 'Đăng nhập thành công!',
+                severity: 'success'
+            });
+
+            // Delay navigation to show toast
+            setTimeout(() => {
+                if (location.state?.from) {
+                    navigate(location.state.from);
+                } else {
+                    navigate(-1);
+                }
+            }, 1000);
         } catch (err) {
             console.error('Login error:', err.response?.data || err.message); // Debug log
-            if (err.response && err.response.data && err.response.data.message) {
-                alert(`Login failed: ${err.response.data.message}`);
-            } else {
-                alert('Login failed. Please try again later.');
-            }
+            setToast({
+                open: true,
+                message: err.response?.data?.message || 'Đăng nhập thất bại',
+                severity: 'error'
+            });
         }
     };
 
@@ -92,6 +114,12 @@ const LoginPage = () => {
                     Đăng ký ngay
                 </span>
             </Typography>
+            <Toast
+                open={toast.open}
+                handleClose={() => setToast({ ...toast, open: false })}
+                severity={toast.severity}
+                message={toast.message}
+            />
         </Box>
     );
 };

@@ -1,45 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
 
 const Navbar = () => {
-    const [user, setUser] = useState(null); // Store logged-in user info
-    const [anchorEl, setAnchorEl] = useState(null); // Anchor for dropdown menu
+    const { user, updateUser } = useUser();
+    const [anchorEl, setAnchorEl] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        // Function to update user state from localStorage
-        const updateUser = () => {
-            const storedUser = localStorage.getItem('user');
-            setUser(storedUser ? JSON.parse(storedUser) : null);
-        };
-
-        // Update user state on component mount
-        updateUser();
-
-        // Listen for changes in localStorage
-        window.addEventListener('storage', updateUser);
-
-        // Cleanup event listener on component unmount
-        return () => {
-            window.removeEventListener('storage', updateUser);
-        };
-    }, []);
-
     const handleLogout = () => {
-        localStorage.removeItem('token'); // Remove token from localStorage
-        localStorage.removeItem('user'); // Remove user info from localStorage
-        setUser(null);
-        alert('Logged out successfully!');
-        navigate('/'); // Redirect to the homepage
+        updateUser(null);
+        localStorage.removeItem('token');
+        setAnchorEl(null);
+        navigate('/');
     };
 
     const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget); // Open dropdown menu
+        setAnchorEl(event.currentTarget);
     };
 
     const handleMenuClose = () => {
-        setAnchorEl(null); // Close dropdown menu
+        setAnchorEl(null);
     };
 
     return (
@@ -78,8 +59,24 @@ const Navbar = () => {
                             </Typography>
                             {user ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <IconButton onClick={handleMenuOpen}>
-                                        <Avatar src={user.avatar} alt={user.name} />
+                                    <IconButton 
+                                        onClick={handleMenuOpen}
+                                        sx={{ 
+                                            padding: '4px',
+                                            transition: 'transform 0.2s',
+                                            '&:hover': { transform: 'scale(1.1)' }
+                                        }}
+                                    >
+                                        <Avatar 
+                                            src={user.avatar} 
+                                            alt={user.name}
+                                            sx={{ 
+                                                width: 40, 
+                                                height: 40,
+                                                border: '2px solid #fff',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}
+                                        />
                                     </IconButton>
                                     <Menu
                                         anchorEl={anchorEl}

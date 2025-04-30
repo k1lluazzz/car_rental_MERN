@@ -47,7 +47,7 @@ const HeroSection = () => {
 
     const handleSearch = () => {
         if (selectedLocation) {
-            navigate(`/cars?location=${encodeURIComponent(selectedLocation)}`); // Navigate with the location query parameter
+            navigate(`/cars?location=${encodeURIComponent(selectedLocation)}`); // Navigate to CarSearchResultsPage
         } else {
             alert('Vui lòng chọn khu vực.');
         }
