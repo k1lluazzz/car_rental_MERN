@@ -1,16 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const moment = require('moment');
 const Payment = require('../models/Payment');
 const vnpayService = require('../services/vnpayService');
-const { getRentalPaymentDetails } = require('../controllers/paymentController');
+const { getRentalPaymentDetails, getPaymentStatus } = require('../controllers/paymentController');
 
 // Add new route for getting rental payment details
 router.get('/rental/:rentalId', getRentalPaymentDetails);
 
+// Add new route for checking payment status
+router.get('/status/:orderId', getPaymentStatus);
+
 router.post('/create_payment_url', async (req, res) => {
     const { rentalId, amount } = req.body;
     try {
-        const orderId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Get IP address
+        const ipAddr = req.headers['x-forwarded-for'] || 
+            req.connection.remoteAddress ||
+            req.socket.remoteAddress ||
+            req.connection.socket.remoteAddress;
+
+        const orderId = `${moment().format('HHmmss')}_${Math.random().toString(36).substr(2, 9)}`;
         const payment = new Payment({
             orderId,
             rentalId,
@@ -22,7 +32,8 @@ router.post('/create_payment_url', async (req, res) => {
         const paymentUrl = vnpayService.createPaymentUrl(
             orderId,
             amount,
-            `Thanh toan cho thue xe ${rentalId}`
+            `Thanh toan cho thue xe ${rentalId}`,
+            ipAddr
         );
         
         res.json({ paymentUrl });

@@ -30,8 +30,9 @@ class VNPayService {
             'vnp_ReturnUrl': this.returnUrl,
             'vnp_IpAddr': '127.0.0.1',
             'vnp_CreateDate': createDate,
+          /*   'queryStringAuth': true, */
         };
-
+        
         const redirectUrl = new URL(this.vnpUrl);
         
         Object.entries(vnp_Params)
@@ -63,26 +64,24 @@ class VNPayService {
         delete vnp_Params['vnp_SecureHash'];
         delete vnp_Params['vnp_SecureHashType'];
 
-        // Sort parameters by field name
+        // Convert params to query string and sort alphabetically
         const signData = Object.keys(vnp_Params)
             .sort()
-            .reduce((acc, key) => {
-                // Skip empty values
-                if (vnp_Params[key] !== "" && vnp_Params[key] !== null && vnp_Params[key] !== undefined) {
-                    acc[key] = vnp_Params[key];
+            .map(key => {
+                if (vnp_Params[key] !== '' && vnp_Params[key] !== null && vnp_Params[key] !== undefined) {
+                    return `${key}=${encodeURIComponent(vnp_Params[key]).replace(/%20/g, '+')}`
                 }
-                return acc;
-            }, {});
-
-        const querystring = Object.entries(signData)
-            .map(([key, value]) => `${key}=${value}`)
+                return '';
+            })
+            .filter(item => item) // Remove empty strings
             .join('&');
 
-        const hmac = crypto.createHmac("sha512", this.hashSecret);
-        const signed = hmac.update(Buffer.from(querystring, 'utf-8')).digest("hex");     
+        const hmac = crypto.createHmac('sha512', this.hashSecret);
+        const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
         return secureHash === signed;
     }
+    
 }
 
 module.exports = new VNPayService();
