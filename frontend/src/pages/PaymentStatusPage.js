@@ -15,7 +15,7 @@ const PaymentStatusPage = () => {
         const checkPaymentStatus = async () => {
             try {
                 const response = await axios.get(`http://localhost:5000/api/payments/status/${orderId}`);
-                setPayment(response.data);
+                                setPayment(response.data);
             } catch (error) {
                 console.error('Error checking payment status:', error);
             } finally {
@@ -43,11 +43,14 @@ const PaymentStatusPage = () => {
             textAlign: 'center',
             p: 3 
         }}>
-            {payment?.status === 'completed' ? (
+            {payment && payment.status === 'completed' ? (
                 <>
                     <Check sx={{ fontSize: 60, color: 'success.main' }} />
                     <Typography variant="h5" sx={{ mt: 2 }}>
                         Thanh toán thành công!
+                    </Typography>
+                    <Typography variant="body1" sx={{ mt: 1 }}>
+                        Mã giao dịch: {payment.orderId}
                     </Typography>
                 </>
             ) : (

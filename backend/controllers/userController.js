@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find();
+        const users = await User.find().select('-password');
         res.json(users);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -70,4 +70,57 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { getAllUsers, addUser, loginUser };
+const updateUserStatus = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ message: 'Không thể thay đổi trạng thái của admin' });
+        }
+
+        user.status = req.body.status;
+        await user.save();
+        
+        const userResponse = user.toObject();
+        delete userResponse.password;
+        res.json(userResponse);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ message: 'Không thể xóa tài khoản admin' });
+        }
+
+        await User.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Đã xóa người dùng thành công' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+const verifyToken = async (req, res) => {
+    // If the request reaches here, it means the token is valid
+    // (authenticated by the middleware)
+    res.status(200).json({ valid: true });
+};
+
+module.exports = {
+    getAllUsers,
+    addUser,
+    loginUser,
+    updateUserStatus,
+    deleteUser,
+    verifyToken
+};

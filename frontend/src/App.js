@@ -20,7 +20,18 @@ import PaymentPage from './pages/PaymentPage';
 // Protected Route Component
 const AdminRoute = ({ children }) => {
     const { user } = useUser();
-    return user?.role === 'admin' ? children : <Navigate to="/login" />;
+    const location = useLocation();
+
+    if (!user) {
+        // Save attempted location to redirect back after login
+        return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    }
+
+    if (user.role !== 'admin') {
+        return <Navigate to="/" replace />;
+    }
+
+    return children;
 };
 
 // Main App Component

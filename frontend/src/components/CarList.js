@@ -13,7 +13,7 @@ const CarList = ({ filters }) => {
     const [cars, setCars] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
-    const carsPerPage = 8;
+    const carsPerPage = 9;
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -50,7 +50,7 @@ const CarList = ({ filters }) => {
 
     const LoadingSkeleton = () => (
         <Grid container spacing={3}>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
                 <Grid item xs={12} sm={6} md={3} key={item}>
                     <Paper sx={{ p: 2 }}>
                         <Skeleton variant="rectangular" height={200} />

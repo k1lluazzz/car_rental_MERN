@@ -1,13 +1,18 @@
 const express = require('express');
-const { getAllUsers, addUser, loginUser } = require('../controllers/userController');
-const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
 const router = express.Router();
+const { getAllUsers, addUser, loginUser, updateUserStatus, deleteUser, verifyToken } = require('../controllers/userController');
+const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
 
-// Admin-only route to get all users
-router.get('/', authenticateToken, isAdmin, getAllUsers);
-
-// User registration and login remain public
+// Public routes
 router.post('/register', addUser);
 router.post('/login', loginUser);
+
+// Token verification route
+router.get('/verify', authenticateToken, verifyToken);
+
+// Protected routes - require admin access
+router.get('/', authenticateToken, isAdmin, getAllUsers);
+router.patch('/:id/status', authenticateToken, isAdmin, updateUserStatus);
+router.delete('/:id', authenticateToken, isAdmin, deleteUser);
 
 module.exports = router;

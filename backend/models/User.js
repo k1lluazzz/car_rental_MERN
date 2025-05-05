@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['user', 'admin'], default: 'user' }, // Role field
+    status: { type: String, enum: ['active', 'blocked'], default: 'active' }, // Status field
     avatar: { type: String, required: false },
 });
 

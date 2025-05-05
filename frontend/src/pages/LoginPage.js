@@ -44,9 +44,12 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            console.log('Login request payload:', credentials); // Debug log
             if (!credentials.email || !credentials.password) {
-                alert('Email and password are required.');
+                setToast({
+                    open: true,
+                    message: 'Vui lòng nhập email và mật khẩu',
+                    severity: 'error'
+                });
                 return;
             }
 
@@ -55,9 +58,8 @@ const LoginPage = () => {
                 password: credentials.password,
             });
 
-            console.log('Login response:', response.data); // Debug log
             localStorage.setItem('token', response.data.token);
-            updateUser(response.data.user); // Update user context
+            updateUser(response.data.user);
 
             setToast({
                 open: true,
@@ -65,16 +67,14 @@ const LoginPage = () => {
                 severity: 'success'
             });
 
-            // Delay navigation to show toast
+            // Delayed navigation to show toast
             setTimeout(() => {
-                if (location.state?.from) {
-                    navigate(location.state.from);
-                } else {
-                    navigate(-1);
-                }
+                // Check for saved redirect location
+                const redirectTo = location.state?.from || '/';
+                navigate(redirectTo, { replace: true });
             }, 1000);
         } catch (err) {
-            console.error('Login error:', err.response?.data || err.message); // Debug log
+            console.error('Login error:', err);
             setToast({
                 open: true,
                 message: err.response?.data?.message || 'Đăng nhập thất bại',

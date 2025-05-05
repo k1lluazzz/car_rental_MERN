@@ -1,52 +1,24 @@
 const express = require('express');
-const { getAllRentals } = require('../controllers/rentalController');
+const { getAllRentals, addRental, updateRentalStatus } = require('../controllers/rentalController');
+const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
 const Rental = require('../models/Rental');
 const router = express.Router();
 
-router.get('/', getAllRentals);
+// Admin routes
+router.get('/', authenticateToken, isAdmin, getAllRentals);
+router.patch('/:id/status', authenticateToken, isAdmin, updateRentalStatus);
 
-// Create a new rental
-router.post('/', async (req, res) => {
+// User routes
+router.post('/book', authenticateToken, async (req, res) => {
     const { car, userName, startDate, endDate } = req.body;
-    try {
-        const newRental = new Rental({ car, userName, startDate, endDate });
-        await newRental.save();
-        res.status(201).json(newRental);
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
-});
-
-// Get a single rental by ID
-router.get('/:id', async (req, res) => {
-    try {
-        const rental = await Rental.findById(req.params.id)
-            .populate('car');
-            
-        if (!rental) {
-            return res.status(404).json({ message: 'Đơn thuê xe không tồn tại' });
-        }
-
-        res.json(rental);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-router.post('/book', async (req, res) => {
-    const { car, userName, startDate, endDate } = req.body;
-
     try {
         const isAvailable = await Rental.isCarAvailable(car, new Date(startDate), new Date(endDate));
         if (!isAvailable) {
             return res.status(400).json({ message: 'Car is not available for the selected dates.' });
         }
 
-        // Create rental without optional fields - they'll be calculated in pre-save
         const newRental = new Rental({ car, userName, startDate, endDate });
         await newRental.save();
-
-        // Populate car details in response
         const populatedRental = await Rental.findById(newRental._id).populate('car');
         res.status(201).json(populatedRental);
     } catch (err) {
@@ -54,9 +26,14 @@ router.post('/book', async (req, res) => {
     }
 });
 
-// Add new endpoint for user bookings
-router.get('/user/:userId', async (req, res) => {
+// Get user's own rentals
+router.get('/user/:userId', authenticateToken, async (req, res) => {
     try {
+        // Only allow users to see their own rentals or admins to see any user's rentals
+        if (req.user.role !== 'admin' && req.user.id !== req.params.userId) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
         const rentals = await Rental.find({ 
             userId: req.params.userId,
             $or: [

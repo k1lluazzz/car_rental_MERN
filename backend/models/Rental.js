@@ -1,25 +1,50 @@
 const mongoose = require('mongoose');
 
 const rentalSchema = new mongoose.Schema({
-    car: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
-    userName: { type: String, required: true },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
+    car: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Car', 
+        required: true 
+    },
+    userName: { 
+        type: String, 
+        required: true 
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    startDate: { 
+        type: Date, 
+        required: true 
+    },
+    endDate: { 
+        type: Date, 
+        required: true 
+    },
     totalAmount: { 
-        type: Number, 
+        type: Number,
         required: true 
     },
     durationInDays: { 
-        type: Number, 
+        type: Number,
         required: true 
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'completed', 'cancelled', 'unpaid'],
+        default: 'pending'
     }
+}, {
+    timestamps: true
 });
 
 rentalSchema.statics.isCarAvailable = async function (carId, startDate, endDate) {
     return !(await this.exists({
         car: carId,
+        status: { $ne: 'cancelled' },
         $or: [
-            { startDate: { $lt: endDate }, endDate: { $gt: startDate } }, // Overlapping bookings
+            { startDate: { $lt: endDate }, endDate: { $gt: startDate } }
         ],
     }));
 };
@@ -50,6 +75,5 @@ rentalSchema.pre('validate', async function(next) {
 
     next();
 });
-
 
 module.exports = mongoose.model('Rental', rentalSchema);

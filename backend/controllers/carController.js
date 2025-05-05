@@ -6,11 +6,10 @@ const getAllCars = async (req, res) => {
         const { location, fuelType, seats, name, brand } = req.query;
         const filter = {};
 
-        // Updated location filter to be more flexible
         if (location) {
             filter.location = { 
                 $regex: location.trim(), 
-                $options: 'i'  // case-insensitive
+                $options: 'i'
             };
         }
         if (fuelType) filter.fuelType = fuelType;
@@ -18,11 +17,10 @@ const getAllCars = async (req, res) => {
         if (name) filter.name = { $regex: name, $options: 'i' };
         if (brand) filter.brand = { $regex: brand, $options: 'i' };
 
-        console.log('Filter:', filter); // Debug log
         const cars = await Car.find(filter);
-        console.log('Found cars:', cars.length); // Debug log
         res.json(cars);
     } catch (err) {
+        console.error('Error in getAllCars:', err);
         res.status(500).json({ message: err.message });
     }
 };
@@ -34,37 +32,94 @@ const getCarById = async (req, res) => {
         if (!car) return res.status(404).json({ message: 'Car not found' });
         res.json(car);
     } catch (err) {
+        console.error('Error in getCarById:', err);
         res.status(500).json({ message: err.message });
     }
 };
 
 // Create a new car
 const createCar = async (req, res) => {
-    const carData = req.body;
-    if (req.file) {
-        carData.image = req.file.path; // Save the Cloudinary URL
-    }
-    const car = new Car(carData);
     try {
+        // Validate request body
+        if (!req.body.name || !req.body.brand || !req.body.pricePerDay || 
+            !req.body.transmission || !req.body.seats || !req.body.fuelType || 
+            !req.body.location) {
+            return res.status(400).json({ 
+                message: 'Missing required fields',
+                requiredFields: ['name', 'brand', 'pricePerDay', 'transmission', 'seats', 'fuelType', 'location']
+            });
+        }
+
+        const carData = { ...req.body };
+        
+        // Convert string values to appropriate types
+        if (carData.pricePerDay) {
+            carData.pricePerDay = Number(carData.pricePerDay);
+        }
+        if (carData.seats) {
+            carData.seats = Number(carData.seats);
+        }
+
+        // Handle image upload
+        if (req.file) {
+            console.log('Uploaded file:', req.file);
+            carData.image = req.file.path;
+        }
+
+        const car = new Car(carData);
         const newCar = await car.save();
         res.status(201).json(newCar);
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        console.error('Error in createCar:', err);
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ 
+                message: 'Validation Error', 
+                errors: Object.values(err.errors).map(e => e.message)
+            });
+        }
+        res.status(500).json({ message: 'Error creating car', error: err.message });
     }
 };
 
 // Update a car by ID
 const updateCar = async (req, res) => {
     try {
-        const carData = req.body;
-        if (req.file) {
-            carData.image = req.file.path; // Save the Cloudinary URL
+        const carData = { ...req.body };
+        
+        // Convert string values to appropriate types
+        if (carData.pricePerDay) {
+            carData.pricePerDay = Number(carData.pricePerDay);
         }
-        const updatedCar = await Car.findByIdAndUpdate(req.params.id, carData, { new: true });
-        if (!updatedCar) return res.status(404).json({ message: 'Car not found' });
+        if (carData.seats) {
+            carData.seats = Number(carData.seats);
+        }
+
+        // Handle image upload
+        if (req.file) {
+            console.log('Uploaded file:', req.file);
+            carData.image = req.file.path;
+        }
+
+        const updatedCar = await Car.findByIdAndUpdate(
+            req.params.id, 
+            carData,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCar) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
+
         res.json(updatedCar);
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        console.error('Error in updateCar:', err);
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ 
+                message: 'Validation Error', 
+                errors: Object.values(err.errors).map(e => e.message)
+            });
+        }
+        res.status(500).json({ message: 'Error updating car', error: err.message });
     }
 };
 
@@ -72,9 +127,12 @@ const updateCar = async (req, res) => {
 const deleteCar = async (req, res) => {
     try {
         const deletedCar = await Car.findByIdAndDelete(req.params.id);
-        if (!deletedCar) return res.status(404).json({ message: 'Car not found' });
+        if (!deletedCar) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
         res.json({ message: 'Car deleted successfully' });
     } catch (err) {
+        console.error('Error in deleteCar:', err);
         res.status(500).json({ message: err.message });
     }
 };
