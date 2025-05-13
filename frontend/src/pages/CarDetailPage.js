@@ -104,8 +104,18 @@ const CarDetailPage = () => {
                     </Paper>
                 </Grid>
 
-                {/* Similar Cars Section */}
-                {similarCars.length > 0 && (
+            </Grid>
+
+            {showBookingForm && (
+                <Box sx={{ mt: 4 }}>
+                    <BookingForm 
+                        carId={id} 
+                        onBookingSuccess={() => setShowBookingForm(false)}
+                    />
+                </Box>
+            )}
+            {/* Similar Cars Section */}
+            {similarCars.length > 0 && (
                     <Grid item xs={12}>
                         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                             Xe tương tự ({similarCars.length})
@@ -119,16 +129,6 @@ const CarDetailPage = () => {
                         </Grid>
                     </Grid>
                 )}
-            </Grid>
-
-            {showBookingForm && (
-                <Box sx={{ mt: 4 }}>
-                    <BookingForm 
-                        carId={id} 
-                        onBookingSuccess={() => setShowBookingForm(false)}
-                    />
-                </Box>
-            )}
         </Box>
     );
 };

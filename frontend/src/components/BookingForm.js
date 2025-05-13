@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, MenuItem, Modal, Grid, ToggleButton, ToggleButtonGroup, IconButton } from '@mui/material';
+import { Box, Typography, TextField, Button, /* MenuItem, */ Modal, Grid, ToggleButton, ToggleButtonGroup, IconButton } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
@@ -36,16 +36,30 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
     useEffect(() => {
         const fetchCar = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/cars/${carId}`);
+                const token = localStorage.getItem('token');
+                const response = await axios.get(`http://localhost:5000/api/cars/${carId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
                 setCar(response.data);
                 // Set the car's location as the selected location
                 setSelectedLocation(response.data.location);
             } catch (error) {
                 console.error('Error fetching car:', error);
+                if (error.response && error.response.status === 401) {
+                    setToast({
+                        open: true,
+                        severity: 'error',
+                        message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'
+                    });
+                    // Optional: Redirect to login page
+                    // navigate('/login');
+                }
             }
         };
         fetchCar();
-    }, [carId]);
+    }, [carId, navigate]);
 
     useEffect(() => {
         if (car && selectedOptions.startDate && selectedOptions.endDate) {
@@ -81,12 +95,16 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
     };
 
     const handleSubmit = async () => {
-        if (!localStorage.getItem('user')) {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
             setToast({
                 open: true,
                 severity: 'error',
                 message: 'Vui lòng đăng nhập để đặt xe'
             });
+            // Optional: Redirect to login page
+            // navigate('/login');
             return;
         }
 
@@ -117,10 +135,16 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                 userName: userData.name,
                 startDate: selectedOptions.startDate,
                 endDate: selectedOptions.endDate,
-                location: selectedLocation
+                location: selectedLocation,
+                userId: userData.id // Add userId for tracking who booked
             };
 
-            const response = await axios.post('http://localhost:5000/api/rentals/book', bookingData);
+            const response = await axios.post('http://localhost:5000/api/rentals/book', bookingData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
             setToast({
                 open: true,
                 severity: 'success',
@@ -132,11 +156,23 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                 navigate(`/payment/${response.data._id}`);
             }, 1500);
         } catch (error) {
+            console.error('Booking error:', error);
             setToast({
                 open: true,
                 severity: 'error',
                 message: error.response?.data?.message || 'Đặt xe thất bại'
             });
+            
+            // Handle token expiration
+            if (error.response && error.response.status === 401) {
+                setToast({
+                    open: true,
+                    severity: 'error',
+                    message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'
+                });
+                // Optional: Redirect to login page
+                // navigate('/login');
+            }
         } finally {
             setLoading(false);
         }

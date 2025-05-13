@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { 
-    Box, 
-    Grid, 
-    Paper, 
-    Typography, 
-    Button, 
+import {
+    Box,
+    Grid,
+    Paper,
+    Typography,
+    Button,
     CircularProgress,
-    Divider 
+    Divider
 } from '@mui/material';
 import PaymentIcon from '@mui/icons-material/Payment';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -30,7 +30,12 @@ const PaymentPage = () => {
         const fetchRental = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:5000/api/rentals/${rentalId}`);
+                const token = localStorage.getItem('token');
+                const response = await axios.get(`http://localhost:5000/api/rentals/${rentalId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
                 setRental(response.data);
             } catch (error) {
                 setToast({
@@ -138,7 +143,7 @@ const PaymentPage = () => {
                             VNPay
                         </Button>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                   {/*  <Grid item xs={12} sm={4}>
                         <Button
                             fullWidth
                             variant="contained"
@@ -159,7 +164,7 @@ const PaymentPage = () => {
                         >
                             ZaloPay
                         </Button>
-                    </Grid>
+                    </Grid> */}
                 </Grid>
             </Paper>
 
