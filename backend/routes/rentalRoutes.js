@@ -46,5 +46,25 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-
+// Thêm route để lấy thông tin chi tiết đơn thuê xe theo ID
+router.get('/:id', authenticateToken, async (req, res) => {
+    try {
+        const rental = await Rental.findById(req.params.id).populate('car');
+        
+        if (!rental) {
+            return res.status(404).json({ message: 'Rental not found' });
+        }
+        
+        // Kiểm tra quyền truy cập (chỉ cho phép admin hoặc chủ sở hữu đơn thuê xe)
+        // Đảm bảo kiểm tra tồn tại của userId
+        if (req.user.role !== 'admin' && rental.userId && req.user.id && 
+            rental.userId.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+        
+        res.json(rental);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 module.exports = router;
