@@ -16,6 +16,7 @@ import CarDetailPage from './pages/CarDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import PaymentStatusPage from './pages/PaymentStatusPage';
 import PaymentPage from './pages/PaymentPage';
+import MyRentalsPage from './pages/MyRentalsPage';
 
 // Protected Route Component
 const AdminRoute = ({ children }) => {
@@ -49,6 +50,7 @@ const AppContent = () => {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/rentals" element={<RentalsPage />} />
+                    <Route path="/my-rentals" element={<MyRentalsPage />} />
                     <Route path="/cars" element={<CarSearchResultsPage />} />
                     <Route path="/cars/:id" element={<CarDetailPage />} />
                     <Route 

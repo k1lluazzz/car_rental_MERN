@@ -40,6 +40,11 @@ const Navbar = () => {
         setAnchorEl(null);
     };
 
+    const handleViewRentals = () => {
+        navigate('/my-rentals');
+        handleMenuClose();
+    };
+
     return (
         <>
             <AppBar position="fixed" color="transparent" elevation={0}>
@@ -126,10 +131,10 @@ const Navbar = () => {
                                             horizontal: 'right',
                                         }}
                                     >
-                                      
                                         <MenuItem onClick={() => navigate('/profile')}>Profile</MenuItem>
                                         <MenuItem onClick={() => navigate('/settings')}>Settings</MenuItem>
-                                        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                                        <MenuItem onClick={handleViewRentals}>Đơn thuê xe</MenuItem>
+                                        <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
                                     </Menu>
                                 </Box>
                             ) : (

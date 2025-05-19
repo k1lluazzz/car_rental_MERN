@@ -128,15 +128,13 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                     message: 'Không tìm thấy thông tin người dùng'
                 });
                 return;
-            }
-
-            const bookingData = {
+            }            const bookingData = {
                 car: carId,
                 userName: userData.name,
                 startDate: selectedOptions.startDate,
                 endDate: selectedOptions.endDate,
                 location: selectedLocation,
-                userId: userData.id // Add userId for tracking who booked
+                userId: userData._id // MongoDB uses _id instead of id
             };
 
             const response = await axios.post('http://localhost:5000/api/rentals/book', bookingData, {
