@@ -33,36 +33,48 @@ const addUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-    const { email, password } = req.body; // Removed phone
+    const { email, password } = req.body;
     try {
-        console.log('Login attempt with email:', email); // Debug log
+        console.log('Login attempt with email:', email);
+        
         if (!email) {
             return res.status(400).json({ message: 'Email is required' });
         }
+        
         const user = await User.findOne({ email });
         if (!user) {
-            console.log('User not found'); // Debug log
+            console.log('User not found');
             return res.status(404).json({ message: 'User not found' });
         }
-        console.log('User found:', user); // Debug log
-        console.log('Password provided:', password); // Debug log
-        console.log('User password:', user.password); // Debug log
-        const isMatch = await bcrypt.compare(req.body.password, user.password);
+
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            console.log('Password mismatch'); // Debug log
-            return res.status(400).json({ message: 'Invalid password' });
+            console.log('Password does not match');
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        console.log('Login successful for user:', user.email); // Debug log
-        res.status(200).json({
+
+        // Generate token with complete user data
+        const token = jwt.sign({ 
+            id: user._id, 
+            role: user.role,
+            name: user.name,
+            email: user.email 
+        }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        console.log('Login successful for user:', user.email);
+        console.log('Generated token payload:', { id: user._id, role: user.role });
+        
+        res.json({
             message: 'Login successful',
             token,
             user: {
+                _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                phone: user.phone,
                 avatar: user.avatar || 'https://via.placeholder.com/150',
-            },
+            }
         });
     } catch (err) {
         console.error('Error during login:', err); // Debug log

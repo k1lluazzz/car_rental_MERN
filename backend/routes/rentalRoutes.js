@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllRentals, addRental, updateRentalStatus } = require('../controllers/rentalController');
+const { getAllRentals, addRental, updateRentalStatus, getUserRentals } = require('../controllers/rentalController');
 const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
 const Rental = require('../models/Rental');
 const router = express.Router();
@@ -9,6 +9,7 @@ router.get('/', authenticateToken, isAdmin, getAllRentals);
 router.patch('/:id/status', authenticateToken, isAdmin, updateRentalStatus);
 
 // User routes
+router.get('/my-rentals', authenticateToken, getUserRentals);
 router.post('/book', authenticateToken, async (req, res) => {
     const { car, userName, startDate, endDate } = req.body;
     try {
@@ -16,8 +17,16 @@ router.post('/book', authenticateToken, async (req, res) => {
         if (!isAvailable) {
             return res.status(400).json({ message: 'Car is not available for the selected dates.' });
         }
-
-        const newRental = new Rental({ car, userName, startDate, endDate });
+        
+        // Create rental with the authenticated user's ID from JWT token
+        const newRental = new Rental({ 
+            car, 
+            userName, 
+            startDate, 
+            endDate,
+            userId: req.user.id, // Use ID from JWT token
+            status: 'unpaid' // Set initial status as unpaid
+        });
         await newRental.save();
         const populatedRental = await Rental.findById(newRental._id).populate('car');
         res.status(201).json(populatedRental);

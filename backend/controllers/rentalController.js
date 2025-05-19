@@ -35,8 +35,31 @@ const updateRentalStatus = async (req, res) => {
     }
 };
 
+const getUserRentals = async (req, res) => {
+    try {
+        console.log('Getting rentals for user:', req.user.id);
+        // First check if any rentals exist at all
+        const allRentals = await Rental.find();
+        console.log('Total rentals in system:', allRentals.length);
+        
+        const userRentals = await Rental.find({ userId: req.user.id })
+            .populate({
+                path: 'car',
+                select: 'name brand image pricePerDay'
+            })
+            .sort({ createdAt: -1 });
+        
+        console.log('Found rentals for user:', userRentals.length);
+        res.json(userRentals);
+    } catch (err) {
+        console.error('Error in getUserRentals:', err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
 module.exports = { 
     getAllRentals, 
     addRental, 
-    updateRentalStatus 
+    updateRentalStatus,
+    getUserRentals 
 };

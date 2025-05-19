@@ -35,11 +35,19 @@ const getRentalPaymentDetails = async (req, res) => {
 
 const getPaymentStatus = async (req, res) => {
     try {
-        const payment = await Payment.findOne({ orderId: req.params.orderId });
+        const payment = await Payment.findOne({ orderId: req.params.orderId }).populate('rentalId');
         if (!payment) {
             return res.status(404).json({ message: 'Payment not found' });
         }
-        res.json(payment);
+        
+        // Include rental information in the response
+        const rental = await Rental.findById(payment.rentalId).populate('car');
+        const response = {
+            ...payment.toObject(),
+            rental
+        };
+        
+        res.json(response);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

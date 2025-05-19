@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const moment = require('moment');
 const Payment = require('../models/Payment');
+const Rental = require('../models/Rental');
 const vnpayService = require('../services/vnpayService');
 const { getRentalPaymentDetails, getPaymentStatus } = require('../controllers/paymentController');
 
@@ -58,13 +59,22 @@ router.get('/vnpay_return', async (req, res) => {
         if (!payment) {
             throw new Error('Payment not found');
         }
-
+        
         payment.status = responseCode === '00' ? 'completed' : 'failed';
         payment.responseCode = responseCode;
         payment.transactionRef = vnpParams['vnp_TransactionNo'];
         payment.bankCode = vnpParams['vnp_BankCode'];
         payment.paymentDate = new Date();
         await payment.save();
+
+        // Update rental status if payment is successful
+        if (responseCode === '00') {
+            const rental = await Rental.findById(payment.rentalId);
+            if (rental) {
+                rental.status = 'completed'; // Update rental status to completed
+                await rental.save();
+            }
+        }
 
         // Redirect to frontend with status
         res.redirect(`${process.env.FRONTEND_URL}/payment/status?orderId=${orderId}`);
