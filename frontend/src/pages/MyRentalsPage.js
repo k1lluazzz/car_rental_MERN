@@ -22,11 +22,16 @@ import { useUser } from '../contexts/UserContext';
 const MyRentalsPage = () => {
     const [rentals, setRentals] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const navigate = useNavigate();
-    const { user } = useUser();    useEffect(() => {
+    const [error, setError] = useState(null);    const navigate = useNavigate();
+    const { user } = useUser();
+    
+    useEffect(() => {
         const fetchRentals = async () => {
             try {
+                if (!user) {
+                    navigate('/login');
+                    return;
+                }
                 const token = localStorage.getItem('token');
                 if (!token) {
                     navigate('/login');
@@ -49,10 +54,8 @@ const MyRentalsPage = () => {
                 }
                 setLoading(false);
             }
-        };
-
-        fetchRentals();
-    }, [navigate]);
+        };        fetchRentals();
+    }, [navigate, user]);
 
     const getStatusColor = (status) => {
         switch (status) {

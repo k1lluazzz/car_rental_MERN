@@ -18,8 +18,8 @@ const HeroSection = () => {
         endTime: null,
         duration: '',
     });
-    const [rentalType, setRentalType] = useState('day'); // 'day' or 'hour'
-    const [selectedLocation, setSelectedLocation] = useState('Hà Nội');
+    const [rentalType, setRentalType] = useState('day');
+    const [selectedLocation, setSelectedLocation] = useState('Hà Nội');    const [isHovered, setIsHovered] = useState(false);
     const navigate = useNavigate();
 
     const handleOptionChange = (field, value) => {
@@ -58,66 +58,120 @@ const HeroSection = () => {
     tomorrow.setDate(today.getDate() + 1);
 
     return (
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box
+        <LocalizationProvider dateAdapter={AdapterDateFns}>            <Box
                 sx={{
-                    backgroundImage: 'url(./images/background_image.jpg)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    height: '600px',
+                    height: '700px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
                     color: 'white',
                     textAlign: 'center',
-                    margin: '0 15%',
-                    borderRadius: '20px',
+                    margin: '0 auto',
+                    padding: '0 20px',
                     position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: { xs: '0', md: '30px' },
+                    maxWidth: '1400px',
+                    '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: 'url(./images/background_image.jpg)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: 'brightness(0.5)',
+                        transition: 'transform 0.3s ease-out',
+                        transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                        zIndex: 0
+                    }
                 }}
-            >
-                <Box
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >                <Box
                     sx={{
-                        width: '80%',
+                        position: 'relative',
+                        width: '90%',
                         maxWidth: '1200px',
                         margin: '0 auto',
+                        zIndex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4
                     }}
                 >
+                    <Typography 
+                        variant="h2" 
+                        sx={{ 
+                            fontWeight: 700,
+                            mb: 2,
+                            background: 'linear-gradient(45deg, #fff 30%, #e3f2fd 90%)',
+                            backgroundClip: 'text',
+                            textFillColor: 'transparent',
+                            textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                            fontSize: { xs: '2.5rem', md: '3.5rem' }
+                        }}
+                    >
+                        Thuê Xe Tự Lái
+                    </Typography>
+                    <Typography 
+                        variant="h5" 
+                        sx={{ 
+                            mb: 4,
+                            color: 'rgba(255,255,255,0.9)',
+                            fontWeight: 300,
+                            maxWidth: '800px',
+                            margin: '0 auto',
+                            lineHeight: 1.6
+                        }}
+                    >
+                        Trải nghiệm lái xe an toàn và tiện lợi với dịch vụ cho thuê xe tự lái của chúng tôi
+                    </Typography>
                     <Typography variant="h3" sx={{ fontWeight: 'bold', marginBottom: '10px', color: '#fff' }}>
                         HDOTO - Cùng Bạn Đến Mọi Hành Trình
                     </Typography>
                 </Box>
 
-                {/* Floating Box */}
-                <Box
+                {/* Floating Box */}                <Box
                     sx={{
-                        position: 'absolute',
-                        bottom: '-50px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        backgroundColor: 'white',
-                        borderRadius: '15px',
-                        padding: '20px',
+                        position: 'relative',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '20px',
+                        padding: { xs: '20px', md: '30px' },
                         display: 'flex',
-                        gap: '20px',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        gap: { xs: '20px', md: '30px' },
                         alignItems: 'center',
-                        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
                         width: '95%',
-                        maxWidth: '900px',
+                        maxWidth: '1000px',
+                        margin: '0 auto',
+                        transition: 'transform 0.3s ease-out, box-shadow 0.3s ease-out',
+                        '&:hover': {
+                            transform: 'translateY(-5px)',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)'
+                        }
                     }}
-                >
-                    <Box sx={{ flex: 1 }}>
+                >                    <Box sx={{ 
+                        flex: 1,
+                        width: '100%'
+                    }}>
                         <Typography
-                            variant="h6"
+                            variant="subtitle1"
                             sx={{
-                                marginBottom: '5px',
-                                color: '#000000',
+                                marginBottom: '8px',
+                                color: 'text.primary',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '5px',
+                                gap: '8px',
+                                fontWeight: 500
                             }}
                         >
-                            <LocationOnIcon fontSize="small" />
+                            <LocationOnIcon color="primary" />
                             Địa điểm
                         </Typography>
                         <TextField
@@ -126,41 +180,86 @@ const HeroSection = () => {
                             fullWidth
                             value={selectedLocation}
                             onChange={(e) => setSelectedLocation(e.target.value)}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '12px',
+                                    backgroundColor: '#fff',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                        backgroundColor: '#f5f5f5'
+                                    },
+                                    '&.Mui-focused': {
+                                        backgroundColor: '#fff',
+                                        boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.2)'
+                                    }
+                                }
+                            }}
                         >
                             <MenuItem value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</MenuItem>
                             <MenuItem value="Hà Nội">Hà Nội</MenuItem>
-                            <MenuItem value="Đà Nẵng">Đà Nẵng</MenuItem>
-                        </TextField>
+                            <MenuItem value="Đà Nẵng">Đà Nẵng</MenuItem>                        </TextField>
                     </Box>
-                    <Box sx={{ flex: 2 }}>
+                    <Box sx={{ 
+                        flex: 2,
+                        width: '100%'
+                    }}>
                         <Typography
-                            variant="h6"
+                            variant="subtitle1"
                             sx={{
-                                marginBottom: '5px',
-                                color: '#000000',
+                                marginBottom: '8px',
+                                color: 'text.primary',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '5px',
+                                gap: '8px',
+                                fontWeight: 500
                             }}
                         >
-                            <CalendarMonthIcon fontSize="small" />
+                            <CalendarMonthIcon color="primary" />
                             Thời gian thuê
                         </Typography>
                         <TextField
                             type="text"
                             variant="outlined"
                             fullWidth
-                            value={defaultTime || `${today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}, ${today.toLocaleDateString('en-GB')} - ${tomorrow.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}, ${tomorrow.toLocaleDateString('en-GB')}`}
-                            onClick={() => setTimeModalOpen(true)}
+                            value={defaultTime || `${today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}, ${today.toLocaleDateString('en-GB')} - ${tomorrow.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}, ${tomorrow.toLocaleDateString('en-GB')}`}                            onClick={() => setTimeModalOpen(true)}
+                            InputProps={{
+                                sx: {
+                                    borderRadius: '12px',
+                                    backgroundColor: '#fff',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                        backgroundColor: '#f5f5f5'
+                                    },
+                                    '&.Mui-focused': {
+                                        backgroundColor: '#fff',
+                                        boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.2)'
+                                    }
+                                }
+                            }}
                         />
                     </Box>
                     <Button
                         variant="contained"
-                        color="success"
-                        sx={{ marginTop: '25px', padding: '10px 30px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
                         onClick={handleSearch}
+                        sx={{
+                            borderRadius: '12px',
+                            marginTop: '32px',
+                            padding: '12px 32px',
+                            fontSize: '1.1rem',
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                            boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                background: 'linear-gradient(45deg, #1976D2 30%, #2196F3 90%)',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 6px 10px 2px rgba(33, 203, 243, .3)'
+                            }
+                        }}
                     >
-                        Tìm Xe
+                        Tìm Xe Ngay
                     </Button>
                 </Box>
             </Box>
