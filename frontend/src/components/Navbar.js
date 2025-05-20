@@ -210,6 +210,10 @@ const Navbar = () => {
                                         }
                                     }}
                                 >
+                                    <MenuItem onClick={handleViewRentals}>
+                                        <ListAltIcon color="primary" fontSize="small" />
+                                        Đơn thuê xe
+                                    </MenuItem>
                                     <MenuItem onClick={() => navigate('/profile')}>
                                         <AccountCircleIcon color="primary" fontSize="small" />
                                         Hồ sơ
@@ -218,10 +222,7 @@ const Navbar = () => {
                                         <SettingsIcon color="primary" fontSize="small" />
                                         Cài đặt
                                     </MenuItem>
-                                    <MenuItem onClick={handleViewRentals}>
-                                        <ListAltIcon color="primary" fontSize="small" />
-                                        Đơn thuê xe
-                                    </MenuItem>
+                                    
                                     <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
                                         <ExitToAppIcon color="error" fontSize="small" />
                                         Đăng xuất

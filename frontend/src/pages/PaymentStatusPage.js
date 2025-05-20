@@ -64,7 +64,7 @@ const PaymentStatusPage = () => {
             
             <Button 
                 variant="contained" 
-                onClick={() => navigate('/rentals')}
+                onClick={() => navigate('/my-rentals')}
                 sx={{ mt: 3 }}
             >
                 Quay lại trang thuê xe

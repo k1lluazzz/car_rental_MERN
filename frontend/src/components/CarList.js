@@ -14,12 +14,11 @@ const CarList = ({ filters }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const carsPerPage = 9;
-    const navigate = useNavigate();
-
-    useEffect(() => {
+    const navigate = useNavigate();    useEffect(() => {
         const fetchCars = async () => {
             setLoading(true);
             try {
+                console.log('Fetching cars with filters:', filters); // Debug log
                 const response = await axios.get('http://localhost:5000/api/cars', {
                     params: {
                         brand: filters?.brand,
@@ -28,8 +27,8 @@ const CarList = ({ filters }) => {
                         transmission: filters?.transmission,
                         minPrice: filters?.priceRange?.[0],
                         maxPrice: filters?.priceRange?.[1]
-                    }
-                });
+                    }                });
+                console.log('Cars data from API:', response.data); // Debug log
                 setCars(response.data);
             } catch (error) {
                 console.error('Error fetching cars:', error);
@@ -179,12 +178,14 @@ const CarList = ({ filters }) => {
                                         </Box>
                                     </Box>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            <Typography variant="body2" sx={{ color: '#FFD700', fontWeight: 'bold' }}>
-                                                <StarIcon fontSize="small" marginTop="10px" /> {car.rating}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary" marginLeft={2}>
-                                                {car.trips} chuyến
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>                                                <StarIcon sx={{ color: '#FFD700', fontSize: 'small' }} />
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold', ml: 0.5 }}>
+                                                    {typeof car.rating === 'number' ? `${car.rating.toFixed(1)}/5` : '0.0/5'}
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                                                {car.trips || 0} chuyến
                                             </Typography>
                                         </Box>
                                         <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>

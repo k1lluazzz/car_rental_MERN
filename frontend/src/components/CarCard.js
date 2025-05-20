@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 const CarCard = ({ car }) => {
     const navigate = useNavigate();
 
+    console.log('Car data:', car); // Debug log
+
     const handleCardClick = () => {
         navigate(`/cars/${car._id}`);
     };
@@ -55,13 +57,13 @@ const CarCard = ({ car }) => {
                         {car.location}
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <Typography variant="body2" sx={{ color: '#FFD700', fontWeight: 'bold' }}>
-                            <StarIcon fontSize="small" /> {car.rating}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {car.trips} chuyến
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>                            <StarIcon sx={{ color: '#FFD700', fontSize: 'small' }} />                            <Typography variant="body2" sx={{ fontWeight: 'bold', ml: 0.5 }}>
+                                {typeof car.rating === 'number' ? `${car.rating.toFixed(1)}/5` : '0.0/5'}
+                            </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                            {car.trips || 0} chuyến
                         </Typography>
                     </Box>
                     <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>

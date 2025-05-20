@@ -15,16 +15,21 @@ import {
     Alert,
     Button
 } from '@mui/material';
+import { CheckCircle, DirectionsCar, Star } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import ReturnCarModal from '../components/ReturnCarModal';
 
 const MyRentalsPage = () => {
     const [rentals, setRentals] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);    const navigate = useNavigate();
+    const [error, setError] = useState(null);
+    const [selectedRental, setSelectedRental] = useState(null);
+    const [returnModalOpen, setReturnModalOpen] = useState(false);
+    const navigate = useNavigate();
     const { user } = useUser();
-    
+
     useEffect(() => {
         const fetchRentals = async () => {
             try {
@@ -54,7 +59,8 @@ const MyRentalsPage = () => {
                 }
                 setLoading(false);
             }
-        };        fetchRentals();
+        };
+        fetchRentals();
     }, [navigate, user]);
 
     const getStatusColor = (status) => {
@@ -67,21 +73,42 @@ const MyRentalsPage = () => {
                 return 'error';
             case 'unpaid':
                 return 'default';
+            case 'returned':
+                return 'info';
             default:
                 return 'default';
         }
     };
 
+    const handleReturn = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await axios.get('http://localhost:5000/api/rentals/my-rentals', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setRentals(response.data);
+        } catch (error) {
+            setError('Không thể cập nhật danh sách thuê xe');
+        }
+    };
+
+    const handleReturnClick = (rental) => {
+        setSelectedRental(rental);
+        setReturnModalOpen(true);
+    };
+
     const getStatusText = (status) => {
         switch (status) {
             case 'completed':
-                return 'Đã hoàn thành';
+                return 'Đã thanh toán';
             case 'pending':
                 return 'Chờ xác nhận';
             case 'cancelled':
                 return 'Đã hủy';
             case 'unpaid':
                 return 'Chưa thanh toán';
+            case 'returned':
+                return 'Đã trả xe';
             default:
                 return status;
         }
@@ -104,63 +131,116 @@ const MyRentalsPage = () => {
     }
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
-            <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
-                Đơn thuê xe của tôi
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+            <Typography variant="h4" sx={{ mb: 4, fontWeight: 600 }}>
+                Lịch sử thuê xe
             </Typography>
 
-            <TableContainer component={Paper} elevation={3}>
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            )}
+
+            <TableContainer 
+                component={Paper} 
+                sx={{ 
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(8px)'
+                }}
+            >
                 <Table>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Tên xe</TableCell>
-                            <TableCell>Ngày bắt đầu</TableCell>
-                            <TableCell>Ngày kết thúc</TableCell>
-                            <TableCell>Tổng tiền</TableCell>
-                            <TableCell>Trạng thái</TableCell>
+                        <TableRow sx={{ backgroundColor: 'primary.main' }}>
+                            <TableCell sx={{ color: 'white', fontWeight: 600 }}>Xe</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 600 }}>Ngày bắt đầu</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 600 }}>Ngày kết thúc</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 600 }}>Tổng tiền</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 600 }}>Trạng thái</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 600 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {rentals.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} align="center">
+                                <TableCell colSpan={6} align="center">
                                     <Typography>Bạn chưa có đơn thuê xe nào</Typography>
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            rentals.map(rental => (
-                                <TableRow key={rental._id}>                                    <TableCell>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        {rental.car?.image && (
-                                            <img
-                                                src={rental.car.image}
-                                                alt={rental.car.name}
-                                                style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: '4px' }}
+                            rentals.map((rental) => (
+                                <TableRow key={rental._id}>
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            {rental.car?.image && (
+                                                <img
+                                                    src={rental.car.image}
+                                                    alt={rental.car.name}
+                                                    style={{
+                                                        width: 60,
+                                                        height: 40,
+                                                        objectFit: 'cover',
+                                                        borderRadius: '8px'
+                                                    }}
+                                                />
+                                            )}
+                                            <Typography variant="subtitle1">
+                                                {rental.car?.name || 'N/A'}
+                                            </Typography>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Date(rental.startDate).toLocaleDateString('vi-VN')}
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Date(rental.endDate).toLocaleDateString('vi-VN')}
+                                    </TableCell>
+                                    <TableCell>
+                                        {rental.totalAmount?.toLocaleString()}đ
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            label={getStatusText(rental.status)}
+                                            color={getStatusColor(rental.status)}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        {rental.status === 'completed' && (
+                                            <Button
+                                                variant="outlined"
+                                                color="primary"
+                                                size="small"
+                                                startIcon={<DirectionsCar />}
+                                                onClick={() => handleReturnClick(rental)}
+                                                sx={{ borderRadius: '8px' }}
+                                            >
+                                                Trả xe
+                                            </Button>
+                                        )}
+                                        {rental.status === 'returned' && !rental.review && (
+                                            <Button
+                                                variant="outlined"
+                                                color="primary"
+                                                size="small"
+                                                startIcon={<Star />}
+                                                onClick={() => handleReturnClick(rental)}
+                                                sx={{ borderRadius: '8px' }}
+                                            >
+                                                Đánh giá
+                                            </Button>
+                                        )}
+                                        {rental.status === 'returned' && rental.review && (
+                                            <Chip
+                                                icon={<CheckCircle sx={{ color: 'success.main' }} />}
+                                                label="Đã đánh giá"
+                                                variant="outlined"
+                                                color="success"
                                             />
                                         )}
-                                        <Typography>{rental.car?.name || 'N/A'}</Typography>
-                                    </Box>
-                                </TableCell>
-                                    <TableCell>{new Date(rental.startDate).toLocaleDateString('vi-VN')}</TableCell>
-                                    <TableCell>{new Date(rental.endDate).toLocaleDateString('vi-VN')}</TableCell>
-                                    <TableCell>{rental.totalAmount?.toLocaleString()}đ</TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Chip
-                                                label={getStatusText(rental.status)}
-                                                color={getStatusColor(rental.status)}
-                                                size="small"
-                                            />
-                                            {rental.status === 'unpaid' && (
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    onClick={() => navigate(`/payment/${rental._id}`)}
-                                                >
-                                                    Thanh toán
-                                                </Button>
-                                            )}
-                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -168,6 +248,16 @@ const MyRentalsPage = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            <ReturnCarModal
+                open={returnModalOpen}
+                onClose={() => {
+                    setReturnModalOpen(false);
+                    setSelectedRental(null);
+                }}
+                rental={selectedRental}
+                onReturn={handleReturn}
+            />
         </Container>
     );
 };
