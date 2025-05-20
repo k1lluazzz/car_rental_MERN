@@ -80,7 +80,7 @@ const HeroSection = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundImage: 'url(./images/background_image.jpg)',
+                        backgroundImage: 'url(https://res.cloudinary.com/dfo1vdnhk/image/upload/v1747730571/background_image_y4hnzh.jpg)',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         filter: 'brightness(0.5)',

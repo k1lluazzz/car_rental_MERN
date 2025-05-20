@@ -30,6 +30,7 @@ const Navbar = () => {
         message: '',
         severity: 'success'
     });
+  
 
     // Kiểm tra nếu user là admin
     const isAdmin = user?.role === 'admin';
@@ -85,7 +86,7 @@ const Navbar = () => {
                 >                        <Typography component={Link} to="/" sx={{ textDecoration: 'none' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <img
-                                src="./images/logo.jpg"
+                                src="https://res.cloudinary.com/dfo1vdnhk/image/upload/v1747730570/logo_ulocm0.jpg"
                                 alt="Logo"
                                 style={{ height: '50px', borderRadius: '8px' }}
                             />
