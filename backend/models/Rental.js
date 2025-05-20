@@ -29,11 +29,36 @@ const rentalSchema = new mongoose.Schema({
     durationInDays: { 
         type: Number,
         required: true 
-    },
-    status: {
+    },    status: {
         type: String,
-        enum: ['pending', 'completed', 'cancelled', 'unpaid'],
+        enum: ['pending', 'completed', 'cancelled', 'unpaid', 'returned'],
         default: 'pending'
+    },
+    review: {
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5
+        },
+        comment: {
+            type: String,
+            maxlength: 500
+        },
+        createdAt: {
+            type: Date
+        }
+    },
+    returnDetails: {
+        returnDate: {
+            type: Date
+        },
+        condition: {
+            type: String,
+            enum: ['excellent', 'good', 'fair', 'poor'],
+        },
+        notes: {
+            type: String
+        }
     }
 }, {
     timestamps: true

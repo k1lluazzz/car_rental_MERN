@@ -1,5 +1,12 @@
 const express = require('express');
-const { getAllRentals, addRental, updateRentalStatus, getUserRentals } = require('../controllers/rentalController');
+const { 
+    getAllRentals, 
+    addRental, 
+    updateRentalStatus, 
+    getUserRentals,
+    returnCar,
+    addReview
+} = require('../controllers/rentalController');
 const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
 const Rental = require('../models/Rental');
 const router = express.Router();
@@ -10,6 +17,8 @@ router.patch('/:id/status', authenticateToken, isAdmin, updateRentalStatus);
 
 // User routes
 router.get('/my-rentals', authenticateToken, getUserRentals);
+router.post('/:id/return', authenticateToken, returnCar);
+router.post('/:id/review', authenticateToken, addReview);
 router.post('/book', authenticateToken, async (req, res) => {
     const { car, userName, startDate, endDate } = req.body;
     try {

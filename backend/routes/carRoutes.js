@@ -2,8 +2,10 @@ const express = require('express');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { v2: cloudinary } = require('cloudinary');
-const { getAllCars, getCarById, createCar, updateCar, deleteCar } = require('../controllers/carController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { getAllCars, getCarById, createCar, updateCar, deleteCar, addTestReview } = require('../controllers/carController');
+const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
+const Car = require('../models/Car');
+const Rental = require('../models/Rental');
 const router = express.Router();
 
 // Configure Cloudinary storage
@@ -45,5 +47,28 @@ router.get('/:id', getCarById);
 router.post('/', authenticateToken, upload.single('image'), createCar);
 router.put('/:id', authenticateToken, upload.single('image'), updateCar);
 router.delete('/:id', authenticateToken, deleteCar);
+
+// Test route for adding reviews (temporary)
+router.post('/:id/test-review', addTestReview);
+
+// Update statistics for all cars
+router.post('/update-statistics', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const cars = await Car.find();
+        for (const car of cars) {
+            const completedRentals = await Rental.countDocuments({
+                car: car._id,
+                status: { $in: ['completed', 'returned'] }
+            });
+            
+            car.trips = completedRentals;
+            await car.save();
+        }
+        res.json({ message: 'Car statistics updated successfully' });
+    } catch (error) {
+        console.error('Error updating car statistics:', error);
+        res.status(500).json({ message: 'Error updating car statistics' });
+    }
+});
 
 module.exports = router;
