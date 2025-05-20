@@ -12,7 +12,7 @@ const CarCard = ({ car }) => {
 
     const handleCardClick = () => {
         navigate(`/cars/${car._id}`);
-    };
+    };    const imageUrl = car.image || 'https://res.cloudinary.com/dhyqgl7ie/image/upload/v1/car_images/default-car.png';
 
     return (
         <Card 
@@ -33,8 +33,12 @@ const CarCard = ({ car }) => {
             <CardMedia
                 component="img"
                 height="180"
-                image={car.image || 'https://via.placeholder.com/345x180'} // Use the Cloudinary URL or a placeholder
+                image={imageUrl}
                 alt={car.name}
+                onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://res.cloudinary.com/your-cloud-name/image/upload/v1/car_images/default-car.png';
+                }}
             />
             <CardContent>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }} noWrap>

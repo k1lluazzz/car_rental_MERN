@@ -106,24 +106,33 @@ const AdminCarManagement = () => {
             ...prev,
             image: e.target.files[0]
         }));
-    };
-
-    const handleSubmit = async (e) => {
+    };    const handleSubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
         
+        // Log form data for debugging
+        console.log('Form data before submission:', {
+            ...formData,
+            image: formData.image ? formData.image.name : null
+        });
+        
         // Add all required fields to FormData
         Object.keys(formData).forEach(key => {
-            // Handle special case for seats - convert to number
-            if (key === 'seats' && formData[key]) {
-                data.append(key, Number(formData[key]));
+            if (key === 'image' && formData[key]) {
+                console.log('Adding image to form:', formData[key].name);
+                data.append('image', formData[key]);
             }
-            // Handle special case for pricePerDay - convert to number
-            else if (key === 'pricePerDay' && formData[key]) {
-                data.append(key, Number(formData[key]));
+            // Handle numeric fields
+            else if (['seats', 'pricePerDay'].includes(key) && formData[key]) {
+                const numValue = Number(formData[key]);
+                if (!isNaN(numValue)) {
+                    console.log(`Adding ${key}:`, numValue);
+                    data.append(key, numValue);
+                }
             }
             // Handle all other fields
-            else if (formData[key] !== null) {
+            else if (formData[key] !== null && formData[key] !== '') {
+                console.log(`Adding ${key}:`, formData[key]);
                 data.append(key, formData[key]);
             }
         });
@@ -139,17 +148,28 @@ const AdminCarManagement = () => {
                 severity: 'error'
             });
             return;
-        }
-
-        try {
+        }        try {
             const token = localStorage.getItem('token');
             const headers = {
                 Authorization: `Bearer ${token}`
             };
 
+            // Log form data for debugging
+            console.log('Submitting car data:', {
+                name: formData.name,
+                brand: formData.brand,
+                pricePerDay: formData.pricePerDay,
+                transmission: formData.transmission,
+                seats: formData.seats,
+                fuelType: formData.fuelType,
+                location: formData.location,
+                hasImage: !!formData.image
+            });
+
             if (selectedCar) {
                 // Update existing car
-                await axios.put(`http://localhost:5000/api/cars/${selectedCar._id}`, data, { headers });
+                const response = await axios.put(`http://localhost:5000/api/cars/${selectedCar._id}`, data, { headers });
+                console.log('Update response:', response.data);
                 setToast({
                     open: true,
                     message: 'Cập nhật xe thành công',
@@ -157,7 +177,8 @@ const AdminCarManagement = () => {
                 });
             } else {
                 // Add new car
-                await axios.post('http://localhost:5000/api/cars', data, { headers });
+                const response = await axios.post('http://localhost:5000/api/cars', data, { headers });
+                console.log('Create response:', response.data);
                 setToast({
                     open: true,
                     message: 'Thêm xe mới thành công',
@@ -349,14 +370,25 @@ const AdminCarManagement = () => {
                                 onChange={handleChange}
                                 required
                             />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                style={{ marginTop: '10px' }}
-                            />
+                        </Grid>                        <Grid item xs={12}>
+                            <Box>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    style={{ marginTop: '10px' }}
+                                    id="car-image-upload"
+                                />
+                                {(formData.image || selectedCar?.image) && (
+                                    <Box sx={{ mt: 2, maxWidth: '300px' }}>
+                                        <img
+                                            src={formData.image ? URL.createObjectURL(formData.image) : selectedCar.image}
+                                            alt="Car preview"
+                                            style={{ width: '100%', borderRadius: '4px' }}
+                                        />
+                                    </Box>
+                                )}
+                            </Box>
                         </Grid>
                     </Grid>
                 </DialogContent>
