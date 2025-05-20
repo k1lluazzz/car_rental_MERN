@@ -1,4 +1,5 @@
 const Car = require('../models/Car');
+const cloudinary = require('../config/cloudinary');
 
 // Function to calculate total trips for a car
 const calculateTotalTrips = async (carId) => {
@@ -99,13 +100,18 @@ const getCarById = async (req, res) => {
 // Create a new car
 const createCar = async (req, res) => {
     try {
-        // Validate request body
-        if (!req.body.name || !req.body.brand || !req.body.pricePerDay || 
-            !req.body.transmission || !req.body.seats || !req.body.fuelType || 
-            !req.body.location) {
+        console.log('Creating new car with body:', req.body);
+        console.log('File in request:', req.file);
+        
+        const requiredFields = ['name', 'brand', 'pricePerDay', 'transmission', 'seats', 'fuelType', 'location'];
+        const missingFields = requiredFields.filter(field => !req.body[field]);
+        
+        if (missingFields.length > 0) {
+            console.log('Missing fields:', missingFields);
             return res.status(400).json({ 
                 message: 'Missing required fields',
-                requiredFields: ['name', 'brand', 'pricePerDay', 'transmission', 'seats', 'fuelType', 'location']
+                requiredFields: missingFields,
+                receivedFields: Object.keys(req.body)
             });
         }
 
@@ -117,12 +123,22 @@ const createCar = async (req, res) => {
         }
         if (carData.seats) {
             carData.seats = Number(carData.seats);
-        }
-
-        // Handle image upload
+        }        // Handle image upload from Cloudinary
         if (req.file) {
-            console.log('Uploaded file:', req.file);
-            carData.image = req.file.path;
+            try {
+                console.log('Uploaded file:', req.file);
+                if (!req.file.path) {
+                    throw new Error('No file path received from Cloudinary');
+                }
+                carData.image = req.file.path; // Cloudinary URL is in req.file.path
+                console.log('Image URL:', carData.image);
+            } catch (uploadError) {
+                console.error('Error uploading to Cloudinary:', uploadError);
+                return res.status(500).json({ 
+                    message: 'Error uploading image',
+                    error: uploadError.message
+                });
+            }
         }
 
         const car = new Car(carData);
@@ -143,38 +159,51 @@ const createCar = async (req, res) => {
 // Update a car by ID
 const updateCar = async (req, res) => {
     try {
-        const carData = { ...req.body };
-        
-        // Convert string values to appropriate types
-        if (carData.pricePerDay) {
-            carData.pricePerDay = Number(carData.pricePerDay);
-        }
-        if (carData.seats) {
-            carData.seats = Number(carData.seats);
-        }
+        const { id } = req.params;
+        const updateData = { ...req.body };
 
-        // Handle image upload
-        if (req.file) {
-            console.log('Uploaded file:', req.file);
-            carData.image = req.file.path;
-        }
-
-        const updatedCar = await Car.findByIdAndUpdate(
-            req.params.id, 
-            carData,
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedCar) {
+        // Find existing car
+        const existingCar = await Car.findById(id);
+        if (!existingCar) {
             return res.status(404).json({ message: 'Car not found' });
         }
+
+        // Convert string values to appropriate types
+        if (updateData.pricePerDay) {
+            updateData.pricePerDay = Number(updateData.pricePerDay);
+        }
+        if (updateData.seats) {
+            updateData.seats = Number(updateData.seats);
+        }
+
+        // Handle new image upload
+        if (req.file) {
+            // Extract public_id from old image URL if it exists
+            if (existingCar.image) {
+                const publicId = existingCar.image.split('/').slice(-1)[0].split('.')[0];
+                try {
+                    await cloudinary.uploader.destroy(publicId);
+                    console.log('Old image deleted from Cloudinary');
+                } catch (error) {
+                    console.error('Error deleting old image:', error);
+                }
+            }
+            updateData.image = req.file.path;
+        }
+
+        // Update car with new data
+        const updatedCar = await Car.findByIdAndUpdate(
+            id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
 
         res.json(updatedCar);
     } catch (err) {
         console.error('Error in updateCar:', err);
         if (err.name === 'ValidationError') {
-            return res.status(400).json({ 
-                message: 'Validation Error', 
+            return res.status(400).json({
+                message: 'Validation Error',
                 errors: Object.values(err.errors).map(e => e.message)
             });
         }
@@ -185,14 +214,31 @@ const updateCar = async (req, res) => {
 // Delete a car by ID
 const deleteCar = async (req, res) => {
     try {
-        const deletedCar = await Car.findByIdAndDelete(req.params.id);
-        if (!deletedCar) {
+        const { id } = req.params;
+        
+        // Find car before deleting to get image URL
+        const car = await Car.findById(id);
+        if (!car) {
             return res.status(404).json({ message: 'Car not found' });
         }
+
+        // Delete image from Cloudinary if it exists
+        if (car.image) {
+            const publicId = car.image.split('/').slice(-1)[0].split('.')[0];
+            try {
+                await cloudinary.uploader.destroy(publicId);
+                console.log('Image deleted from Cloudinary');
+            } catch (error) {
+                console.error('Error deleting image from Cloudinary:', error);
+            }
+        }
+
+        // Delete car from database
+        await Car.findByIdAndDelete(id);
         res.json({ message: 'Car deleted successfully' });
     } catch (err) {
         console.error('Error in deleteCar:', err);
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: 'Error deleting car', error: err.message });
     }
 };
 

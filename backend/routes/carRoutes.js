@@ -20,7 +20,11 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'car_images',
         allowed_formats: ['jpg', 'jpeg', 'png'],
-        transformation: [{ width: 800, height: 600, crop: "limit" }]
+        transformation: [{ width: 800, height: 600, crop: "limit" }],
+        public_id: (req, file) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            return `car-${uniqueSuffix}`;
+        }
     }
 });
 
@@ -31,21 +35,48 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024 // limit file size to 5MB
     },
     fileFilter: (req, file, cb) => {
+        console.log('Processing file upload:', {
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size
+        });
+
         // Accept only jpeg, jpg and png
         if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
             cb(null, true);
         } else {
-            cb(null, false);
-            return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+            const error = new Error('Only .png, .jpg and .jpeg format allowed!');
+            console.error('File upload error:', error.message);
+            cb(error);
         }
     }
-});
+}); // Do not call .single('image') here
+
+// Wrapper for handling multer errors
+const handleUpload = (req, res, next) => {
+    upload.single('image')(req, res, (err) => {
+        if (err) {
+            console.error('Upload error:', {
+                message: err.message,
+                stack: err.stack,
+                code: err.code
+            });
+            return res.status(400).json({
+                message: 'Error uploading file',
+                error: err.message
+            });
+        }
+        console.log('File upload successful:', req.file);
+        next();
+    });
+};
 
 // CRUD routes
 router.get('/', getAllCars);
 router.get('/:id', getCarById);
-router.post('/', authenticateToken, upload.single('image'), createCar);
-router.put('/:id', authenticateToken, upload.single('image'), updateCar);
+router.post('/', authenticateToken, handleUpload, createCar);
+router.put('/:id', authenticateToken, handleUpload, updateCar);
 router.delete('/:id', authenticateToken, deleteCar);
 
 // Test route for adding reviews (temporary)
