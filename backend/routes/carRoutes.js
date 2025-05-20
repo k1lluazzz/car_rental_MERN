@@ -16,17 +16,20 @@ cloudinary.config({
 });
 
 const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'car_images',
-        allowed_formats: ['jpg', 'jpeg', 'png'],
-        transformation: [{ width: 800, height: 600, crop: "limit" }],
-        public_id: (req, file) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            return `car-${uniqueSuffix}`;
-        }
+  cloudinary: cloudinary,
+  params: {
+    folder: 'car_images',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    transformation: [
+      { width: 800, height: 600, crop: "fit" }, // Using fit instead of fill to maintain aspect ratio
+    ],
+    public_id: (req, file) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      return `car-${uniqueSuffix}`;
     }
+  }
 });
+
 
 // Configure multer
 const upload = multer({ 

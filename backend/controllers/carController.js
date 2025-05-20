@@ -1,5 +1,5 @@
 const Car = require('../models/Car');
-const cloudinary = require('../config/cloudinary');
+const { v2: cloudinary } = require('cloudinary');
 
 // Function to calculate total trips for a car
 const calculateTotalTrips = async (carId) => {
