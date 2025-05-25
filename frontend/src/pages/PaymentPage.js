@@ -26,6 +26,17 @@ const PaymentPage = () => {
         severity: 'success'
     });
 
+    const calculateTotalPrice = () => {
+        const days = Math.ceil((new Date(rental.endDate) - new Date(rental.startDate)) / (1000 * 60 * 60 * 24));
+        const basePrice = days * rental.car.pricePerDay;
+        return rental.car.discount > 0 ? basePrice * (1 - rental.car.discount / 100) : basePrice;
+    };
+
+    const originalPrice = () => {
+        const days = Math.ceil((new Date(rental.endDate) - new Date(rental.startDate)) / (1000 * 60 * 60 * 24));
+        return days * rental.car.pricePerDay;
+    };
+
     useEffect(() => {
         const fetchRental = async () => {
             try {
@@ -57,7 +68,7 @@ const PaymentPage = () => {
         try {
             const response = await axios.post('http://localhost:5000/api/payments/create_payment_url', {
                 rentalId,
-                amount: rental.totalAmount,
+                amount: calculateTotalPrice(),
                 paymentMethod: method
             });
             window.location.href = response.data.paymentUrl;
@@ -120,8 +131,22 @@ const PaymentPage = () => {
                             <Grid item xs={12}>
                                 <Divider sx={{ my: 2 }} />
                                 <Typography variant="h6" color="primary">
-                                    Tổng tiền: {rental.totalAmount?.toLocaleString()} VNĐ
+                                    Tổng tiền: {calculateTotalPrice().toLocaleString()} VNĐ
                                 </Typography>
+                                {rental.car.discount > 0 && (
+                                    <>
+                                        <Typography
+                                            variant="body1"
+                                            color="text.secondary"
+                                            sx={{ textDecoration: 'line-through' }}
+                                        >
+                                            {originalPrice().toLocaleString()} VNĐ
+                                        </Typography>
+                                        <Typography variant="body2" color="success.main">
+                                            (Giảm {rental.car.discount}%)
+                                        </Typography>
+                                    </>
+                                )}
                             </Grid>
                         </>
                     )}

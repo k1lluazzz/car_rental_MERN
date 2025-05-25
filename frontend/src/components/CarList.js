@@ -121,7 +121,7 @@ const CarList = ({ filters }) => {
                                         alt={car.name}
                                         sx={{
                                             borderRadius: '10px 10px 0 0',
-                                            objectFit: 'contain', // Ensure the full image is displayed
+                                            objectFit: 'fit', // Ensure the full image is displayed
                                             width: '100%', // Ensure the image fills the width
                                             backgroundColor: '#f5f5f5', // Add a background color for better appearance
                                         }}

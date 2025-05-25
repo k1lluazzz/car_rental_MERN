@@ -5,19 +5,32 @@ import axios from 'axios';
 const PaymentForm = ({ rental, onSuccess }) => {
     const [loading, setLoading] = React.useState(false);
 
+    // Calculate discounted amount
+    const calculateFinalAmount = () => {
+        const originalAmount = rental.totalAmount;
+        if (rental.car && rental.car.discount > 0) {
+            const discountAmount = (originalAmount * rental.car.discount) / 100;
+            return originalAmount - discountAmount;
+        }
+        return originalAmount;
+    };
+
     const handlePayment = async () => {
         try {
             setLoading(true);
+            const finalAmount = calculateFinalAmount();
             const response = await axios.post('http://localhost:5000/api/payments/create_payment_url', {
                 rentalId: rental._id,
-                amount: rental.totalAmount
+                amount: finalAmount,
+                originalAmount: rental.totalAmount,
+                discount: rental.car?.discount || 0
             });
             
             // Redirect to VNPay payment URL
             window.location.href = response.data.paymentUrl;
         } catch (error) {
             console.error('Payment error:', error);
-            alert('Payment creation failed. Please try again.');
+            alert('Không thể tạo thanh toán. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Button, /* MenuItem, */ Modal, Grid, ToggleButton, ToggleButtonGroup, IconButton } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, TextField, Button, Modal, Grid, ToggleButton, ToggleButtonGroup, IconButton } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
@@ -24,7 +24,7 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
     });
     const [rentalType, setRentalType] = useState('day');
     const [isCustomTimeSelected, setIsCustomTimeSelected] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({
         open: false,
         severity: 'success',
@@ -43,31 +43,47 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                     }
                 });
                 setCar(response.data);
-                // Set the car's location as the selected location
                 setSelectedLocation(response.data.location);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching car:', error);
+                setLoading(false);
                 if (error.response && error.response.status === 401) {
                     setToast({
                         open: true,
                         severity: 'error',
                         message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'
                     });
-                    // Optional: Redirect to login page
-                    // navigate('/login');
+                } else {
+                    setToast({
+                        open: true,
+                        severity: 'error',
+                        message: 'Không thể tải thông tin xe'
+                    });
                 }
             }
         };
         fetchCar();
-    }, [carId, navigate]);
+    }, [carId]);
+
+    const calculatePrice = useCallback(() => {
+        if (!car || !selectedOptions.startDate || !selectedOptions.endDate) return 0;
+        const days = Math.ceil((selectedOptions.endDate - selectedOptions.startDate) / (1000 * 60 * 60 * 24));
+        const basePrice = days * car.pricePerDay;
+        return car.discount > 0 ? basePrice * (1 - car.discount / 100) : basePrice;
+    }, [selectedOptions.startDate, selectedOptions.endDate, car]);
+
+    const originalPrice = useCallback(() => {
+        if (!car || !selectedOptions.startDate || !selectedOptions.endDate) return 0;
+        const days = Math.ceil((selectedOptions.endDate - selectedOptions.startDate) / (1000 * 60 * 60 * 24));
+        return days * car.pricePerDay;
+    }, [selectedOptions.startDate, selectedOptions.endDate, car]);
 
     useEffect(() => {
         if (car && selectedOptions.startDate && selectedOptions.endDate) {
-            const diffTime = Math.abs(new Date(selectedOptions.endDate) - new Date(selectedOptions.startDate));
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            setCalculatedPrice(car.pricePerDay * diffDays);
+            setCalculatedPrice(calculatePrice());
         }
-    }, [car, selectedOptions.startDate, selectedOptions.endDate]);
+    }, [car, selectedOptions.startDate, selectedOptions.endDate, calculatePrice]);
 
     const handleOptionChange = (field, value) => {
         setSelectedOptions((prev) => ({ ...prev, [field]: value }));
@@ -103,8 +119,6 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                 severity: 'error',
                 message: 'Vui lòng đăng nhập để đặt xe'
             });
-            // Optional: Redirect to login page
-            // navigate('/login');
             return;
         }
 
@@ -128,13 +142,28 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                     message: 'Không tìm thấy thông tin người dùng'
                 });
                 return;
-            }            const bookingData = {
+            }            // Calculate duration in days
+            const startDate = new Date(selectedOptions.startDate);
+            const endDate = new Date(selectedOptions.endDate);
+            startDate.setHours(selectedOptions.startTime.getHours(), selectedOptions.startTime.getMinutes());
+            endDate.setHours(selectedOptions.endTime.getHours(), selectedOptions.endTime.getMinutes());
+            
+            const durationInDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+            const originalPriceValue = durationInDays * car.pricePerDay;
+            const totalPriceValue = car.discount ? Math.floor(originalPriceValue * (1 - car.discount / 100)) : originalPriceValue;
+
+            const bookingData = {
                 car: carId,
                 userName: userData.name,
-                startDate: selectedOptions.startDate,
-                endDate: selectedOptions.endDate,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
                 location: selectedLocation,
-                userId: userData._id // MongoDB uses _id instead of id
+                userId: userData._id,
+                originalPrice: originalPriceValue,
+                totalPrice: totalPriceValue,
+                totalAmount: totalPriceValue,
+                durationInDays,
+                discount: car.discount || 0
             };
 
             const response = await axios.post('http://localhost:5000/api/rentals/book', bookingData, {
@@ -149,7 +178,6 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                 message: 'Đặt xe thành công!'
             });
 
-            // Redirect to payment page with rental ID
             setTimeout(() => {
                 navigate(`/payment/${response.data._id}`);
             }, 1500);
@@ -161,15 +189,12 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                 message: error.response?.data?.message || 'Đặt xe thất bại'
             });
             
-            // Handle token expiration
             if (error.response && error.response.status === 401) {
                 setToast({
                     open: true,
                     severity: 'error',
                     message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'
                 });
-                // Optional: Redirect to login page
-                // navigate('/login');
             }
         } finally {
             setLoading(false);
@@ -193,9 +218,8 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                             <Typography variant="subtitle1" sx={{ marginBottom: '10px' }}>
                                 <LocationOnIcon fontSize="small" /> Địa điểm
                             </Typography>
-                            {/* Replace TextField with static display of car location */}
                             <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                                {car?.location}
+                                {car?.location || 'Đang tải...'}
                             </Typography>
                         </Box>
 
@@ -211,21 +235,48 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                         </Box>
                     </Box>
 
-                    {calculatedPrice > 0 && (
-                        <Typography variant="h6" sx={{ mt: 2, mb: 2 }}>
-                            Tổng tiền: {calculatedPrice.toLocaleString()}K
-                        </Typography>
-                    )}
+                    <Box sx={{ mt: 3 }}>
+                        <Typography variant="h6">Chi phí thuê:</Typography>
+                        {loading ? (
+                            <Typography variant="body1">Đang tải...</Typography>
+                        ) : !car ? (
+                            <Typography variant="body1">Không tìm thấy thông tin xe</Typography>
+                        ) : (
+                            <>
+                                {car.discount > 0 ? (
+                                    <>
+                                        <Typography 
+                                            variant="body1" 
+                                            color="text.secondary" 
+                                            sx={{ textDecoration: 'line-through' }}
+                                        >
+                                            {originalPrice().toLocaleString()}K VND
+                                        </Typography>
+                                        <Typography variant="h6" color="primary">
+                                            {calculatePrice().toLocaleString()}K VND
+                                        </Typography>
+                                        <Typography variant="body2" color="success.main">
+                                            (Giảm {car.discount}%)
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <Typography variant="h6">
+                                        {calculatePrice().toLocaleString()}K VND
+                                    </Typography>
+                                )}
+                            </>
+                        )}
+                    </Box>
 
                     <Button
                         variant="contained"
                         color="primary"
                         fullWidth
                         onClick={handleSubmit}
-                        disabled={loading || !calculatedPrice}
+                        disabled={loading || !car || !calculatedPrice}
                         sx={{ mt: 2 }}
                     >
-                        {loading ? 'Đang xử lý...' : (isCustomTimeSelected ? 'Xác nhận đặt xe' : 'Vui lòng chọn thời gian thuê')}
+                        {loading ? 'Đang tải...' : !car ? 'Không tìm thấy thông tin xe' : (isCustomTimeSelected ? 'Xác nhận đặt xe' : 'Vui lòng chọn thời gian thuê')}
                     </Button>
                 </Box>
 
@@ -251,7 +302,7 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                         <ToggleButtonGroup
                             value={rentalType}
                             exclusive
-                            onChange={(e, newType) => setRentalType(newType)}
+                            onChange={(e, newType) => newType && setRentalType(newType)}
                             sx={{ marginBottom: '10px', width: '100%' }}
                         >
                             <ToggleButton value="day" sx={{ flex: 1 }}>Thuê theo ngày</ToggleButton>
@@ -279,6 +330,7 @@ const BookingForm = ({ carId, onBookingSuccess }) => {
                                         label="Ngày trả xe"
                                         value={selectedOptions.endDate}
                                         onChange={(newValue) => handleOptionChange('endDate', newValue)}
+                                        minDate={selectedOptions.startDate}
                                     />
                                 </Grid>
                                 <Grid item xs={12}>

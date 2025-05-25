@@ -67,9 +67,24 @@ const CarDetailPage = () => {
                         <Typography variant="h4" gutterBottom>
                             {car.name}
                         </Typography>
-                        <Typography variant="h5" color="primary" gutterBottom>
-                            {car.pricePerDay.toLocaleString()}K/ngày
-                        </Typography>
+                        {car.discount > 0 ? (
+                            <>
+                                <Typography 
+                                    variant="h5" 
+                                    color="text.secondary" 
+                                    sx={{ textDecoration: 'line-through' }}
+                                >
+                                    {car.pricePerDay.toLocaleString()}K/ngày
+                                </Typography>
+                                <Typography variant="h5" color="primary" gutterBottom>
+                                    {(car.pricePerDay * (1 - car.discount / 100)).toLocaleString()}K/ngày
+                                </Typography>
+                            </>
+                        ) : (
+                            <Typography variant="h5" color="primary" gutterBottom>
+                                {car.pricePerDay.toLocaleString()}K/ngày
+                            </Typography>
+                        )}
                         <Divider sx={{ my: 2 }} />
                         
                         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>

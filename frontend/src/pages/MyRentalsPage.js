@@ -191,15 +191,35 @@ const MyRentalsPage = () => {
                                                 {rental.car?.name || 'N/A'}
                                             </Typography>
                                         </Box>
-                                    </TableCell>
-                                    <TableCell>
+                                    </TableCell>                                    <TableCell>
                                         {new Date(rental.startDate).toLocaleDateString('vi-VN')}
                                     </TableCell>
                                     <TableCell>
                                         {new Date(rental.endDate).toLocaleDateString('vi-VN')}
                                     </TableCell>
                                     <TableCell>
-                                        {rental.totalAmount?.toLocaleString()}đ
+                                        {rental.discount > 0 ? (
+                                            <Box>
+                                                <Typography 
+                                                    variant="body2" 
+                                                    color="text.secondary" 
+                                                    sx={{ textDecoration: 'line-through' }}
+                                                >
+                                                    {rental.originalPrice?.toLocaleString()}đ
+                                                </Typography>
+                                                <Typography variant="body1" color="primary">
+                                                    {rental.totalPrice?.toLocaleString()}đ
+                                                </Typography>
+                                                <Typography variant="caption" color="success.main">
+                                                    (Giảm {rental.discount}%)
+                                                </Typography>
+                                            </Box>
+                                        ) : (
+                                            <Typography>
+                                                {rental.totalAmount?.toLocaleString()}đ
+                                            </Typography>
+                                        )}
+                                        
                                     </TableCell>
                                     <TableCell>
                                         <Chip

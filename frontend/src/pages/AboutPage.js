@@ -72,7 +72,7 @@ const AboutPage = () => {
                         <CardMedia
                             component="img"
                             height="300"
-                            image="./images/car1.jpg"
+                            image="https://res.cloudinary.com/dfo1vdnhk/image/upload/v1747731683/car_images/car-1747731681699-260316467.jpg"
                             alt="HDOTO Office"
                             sx={{ objectFit: 'cover' }}
                         />
