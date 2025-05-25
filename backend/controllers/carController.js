@@ -6,7 +6,7 @@ const calculateTotalTrips = async (carId) => {
     const Rental = require('../models/Rental');
     return await Rental.countDocuments({
         car: carId,
-        status: { $ne: 'cancelled' }  // Count all statuses except cancelled
+        status: { $in: ['completed', 'returned'] }
     });
 };
 

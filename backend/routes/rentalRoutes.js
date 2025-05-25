@@ -20,21 +20,26 @@ router.get('/my-rentals', authenticateToken, getUserRentals);
 router.post('/:id/return', authenticateToken, returnCar);
 router.post('/:id/review', authenticateToken, addReview);
 router.post('/book', authenticateToken, async (req, res) => {
-    const { car, userName, startDate, endDate } = req.body;
+    const { car: carId, userName, startDate, endDate, originalPrice, totalPrice, durationInDays, discount } = req.body;
     try {
-        const isAvailable = await Rental.isCarAvailable(car, new Date(startDate), new Date(endDate));
+        const isAvailable = await Rental.isCarAvailable(carId, new Date(startDate), new Date(endDate));
         if (!isAvailable) {
             return res.status(400).json({ message: 'Car is not available for the selected dates.' });
         }
         
-        // Create rental with the authenticated user's ID from JWT token
+        // Create rental with all required fields
         const newRental = new Rental({ 
-            car, 
+            car: carId, 
             userName, 
             startDate, 
             endDate,
-            userId: req.user.id, // Use ID from JWT token
-            status: 'unpaid' // Set initial status as unpaid
+            userId: req.user.id,
+            status: 'unpaid',
+            originalPrice,
+            totalPrice,
+            totalAmount: totalPrice,
+            durationInDays,
+            discount
         });
         await newRental.save();
         const populatedRental = await Rental.findById(newRental._id).populate('car');

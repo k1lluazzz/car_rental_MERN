@@ -29,12 +29,40 @@ const getMonthlyRevenue = async (req, res) => {
         const monthlyRevenue = await Payment.aggregate([
             { $match: { status: 'completed' } },
             {
+                $lookup: {
+                    from: 'rentals',
+                    localField: 'rentalId',
+                    foreignField: '_id',
+                    as: 'rental'
+                }
+            },
+            { $unwind: '$rental' },
+            {
+                $lookup: {
+                    from: 'cars',
+                    localField: 'rental.car',
+                    foreignField: '_id',
+                    as: 'car'
+                }
+            },
+            { $unwind: '$car' },
+            {
                 $group: {
                     _id: {
                         month: { $month: '$createdAt' },
                         year: { $year: '$createdAt' }
                     },
-                    revenue: { $sum: '$amount' }
+                    revenue: { $sum: '$amount' },
+                    originalRevenue: { $sum: '$originalAmount' },
+                    discountTotal: { $sum: '$discountAmount' },
+                    totalRentals: { $sum: 1 },
+                    carTypes: { 
+                        $addToSet: {
+                            carName: '$car.name',
+                            brand: '$car.brand'
+                        }
+                    },
+                    averageRentalDuration: { $avg: '$rental.durationInDays' }
                 }
             },
             { $sort: { '_id.year': 1, '_id.month': 1 } }
@@ -42,7 +70,12 @@ const getMonthlyRevenue = async (req, res) => {
 
         const formattedData = monthlyRevenue.map(item => ({
             month: `${item._id.month}/${item._id.year}`,
-            revenue: item.revenue
+            revenue: item.revenue,
+            originalRevenue: item.originalRevenue,
+            discountTotal: item.discountTotal,
+            totalRentals: item.totalRentals,
+            carTypes: item.carTypes,
+            averageRentalDuration: Math.round(item.averageRentalDuration * 10) / 10
         }));
 
         res.json(formattedData);
