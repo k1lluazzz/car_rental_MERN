@@ -80,7 +80,7 @@ const rentalSchema = new mongoose.Schema({
 rentalSchema.statics.isCarAvailable = async function (carId, startDate, endDate) {
     return !(await this.exists({
         car: carId,
-        status: { $ne: 'cancelled' },
+        status: { $nin: ['cancelled', 'returned', 'unpaid'] },
         $or: [
             { startDate: { $lt: endDate }, endDate: { $gt: startDate } }
         ],

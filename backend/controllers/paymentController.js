@@ -5,7 +5,8 @@ const Car = require('../models/Car');
 const getRentalPaymentDetails = async (req, res) => {
     try {
         const rental = await Rental.findById(req.params.rentalId)
-            .populate('car');
+            .populate('car')
+            .populate('userId');
         
         if (!rental) {
             return res.status(404).json({ message: 'Rental not found' });
@@ -24,6 +25,7 @@ const getRentalPaymentDetails = async (req, res) => {
             totalAmount: rental.totalAmount,
             duration: rental.durationInDays,
             car: rental.car,
+            user: rental.userId,
             paymentStatus: existingPayment?.status || 'pending'
         };
 
@@ -35,20 +37,29 @@ const getRentalPaymentDetails = async (req, res) => {
 
 const getPaymentStatus = async (req, res) => {
     try {
-        const payment = await Payment.findOne({ orderId: req.params.orderId }).populate('rentalId');
+        const payment = await Payment.findOne({ orderId: req.params.orderId });
         if (!payment) {
             return res.status(404).json({ message: 'Payment not found' });
         }
         
-        // Include rental information in the response
-        const rental = await Rental.findById(payment.rentalId).populate('car');
+        // Include rental information in the response with proper population
+        const rental = await Rental.findById(payment.rentalId)
+            .populate('car')
+            .populate('userId');
+
+        if (!rental) {
+            return res.status(404).json({ message: 'Rental information not found' });
+        }
+
         const response = {
             ...payment.toObject(),
-            rental
+            rental,
+            userEmail: rental.userId?.email
         };
         
         res.json(response);
     } catch (error) {
+        console.error('Error getting payment status:', error);
         res.status(500).json({ message: error.message });
     }
 };

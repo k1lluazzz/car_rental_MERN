@@ -8,9 +8,7 @@ class VNPayService {
         this.hashSecret = process.env.VNP_HASH_SECRET;
         this.vnpUrl = process.env.VNP_URL;
         this.returnUrl = process.env.VNP_RETURN_URL;
-    }
-
-    createPaymentUrl(orderId, amount, orderInfo) {
+    }    createPaymentUrl(orderId, amount, orderInfo, ipAddr = '127.0.0.1') {
         const date = new Date();
         const createDate = moment(date).format('YYYYMMDDHHmmss');
 
@@ -25,12 +23,11 @@ class VNPayService {
             'vnp_CurrCode': currCode,
             'vnp_TxnRef': orderId,
             'vnp_OrderInfo': orderInfo,
-            'vnp_OrderType': 'other',
+            'vnp_OrderType': 'billpayment',
             'vnp_Amount': amount * 100,
             'vnp_ReturnUrl': this.returnUrl,
-            'vnp_IpAddr': '127.0.0.1',
+            'vnp_IpAddr': ipAddr,
             'vnp_CreateDate': createDate,
-          /*   'queryStringAuth': true, */
         };
         
         const redirectUrl = new URL(this.vnpUrl);
@@ -57,29 +54,49 @@ class VNPayService {
 
         redirectUrl.searchParams.append("vnp_SecureHash", signed);
         return redirectUrl.toString();
-    }
+    }    verifyReturnUrl(vnp_Params) {
+        try {
+            const secureHash = vnp_Params['vnp_SecureHash'];
+            
+            if (!secureHash) {
+                console.error('No secure hash found in VNPay response');
+                return false;
+            }
 
-    verifyReturnUrl(vnp_Params) {
-        const secureHash = vnp_Params['vnp_SecureHash'];
-        delete vnp_Params['vnp_SecureHash'];
-        delete vnp_Params['vnp_SecureHashType'];
+            // Create a copy of the params to avoid modifying the original
+            const params = { ...vnp_Params };
+            delete params['vnp_SecureHash'];
+            delete params['vnp_SecureHashType'];
 
-        // Convert params to query string and sort alphabetically
-        const signData = Object.keys(vnp_Params)
-            .sort()
-            .map(key => {
-                if (vnp_Params[key] !== '' && vnp_Params[key] !== null && vnp_Params[key] !== undefined) {
-                    return `${key}=${encodeURIComponent(vnp_Params[key]).replace(/%20/g, '+')}`
-                }
-                return '';
-            })
-            .filter(item => item) // Remove empty strings
-            .join('&');
+            // Convert params to query string and sort alphabetically
+            const signData = Object.keys(params)
+                .sort()
+                .map(key => {
+                    const value = params[key];
+                    if (value !== '' && value !== null && value !== undefined) {
+                        return `${key}=${encodeURIComponent(value).replace(/%20/g, '+')}`
+                    }
+                    return '';
+                })
+                .filter(item => item) // Remove empty strings
+                .join('&');
 
-        const hmac = crypto.createHmac('sha512', this.hashSecret);
-        const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+            const hmac = crypto.createHmac('sha512', this.hashSecret);
+            const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
-        return secureHash === signed;
+            const isValid = secureHash === signed;
+            
+            if (!isValid) {
+                console.error('VNPay signature verification failed');
+                console.error('Expected:', signed);
+                console.error('Received:', secureHash);
+            }
+
+            return isValid;
+        } catch (error) {
+            console.error('Error verifying VNPay return URL:', error);
+            return false;
+        }
     }
     
 }

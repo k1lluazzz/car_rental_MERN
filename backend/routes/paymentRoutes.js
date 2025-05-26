@@ -4,6 +4,7 @@ const moment = require('moment');
 const Payment = require('../models/Payment');
 const Rental = require('../models/Rental');
 const vnpayService = require('../services/vnpayService');
+const emailService = require('../services/emailService');
 const { getRentalPaymentDetails, getPaymentStatus } = require('../controllers/paymentController');
 
 // Add new route for getting rental payment details
@@ -28,12 +29,18 @@ router.post('/create_payment_url', async (req, res) => {
             amount,
             paymentMethod: 'vnpay'
         });
-        await payment.save();
+        await payment.save();        // Get rental details for the order info
+        const rental = await Rental.findById(rentalId).populate('car');
+        if (!rental) {
+            throw new Error('Rental not found');
+        }
 
+        const orderInfo = `Thanh toan thue xe ${rental.car.name} - ${orderId}`;
+        
         const paymentUrl = vnpayService.createPaymentUrl(
             orderId,
             amount,
-            `Thanh toan cho thue xe ${rentalId}`,
+            orderInfo,
             ipAddr
         );
         
@@ -65,21 +72,35 @@ router.get('/vnpay_return', async (req, res) => {
         payment.transactionRef = vnpParams['vnp_TransactionNo'];
         payment.bankCode = vnpParams['vnp_BankCode'];
         payment.paymentDate = new Date();
-        await payment.save();
-
-        // Update rental status if payment is successful
+        await payment.save();        // Update rental status and send email if payment is successful
         if (responseCode === '00') {
-            const rental = await Rental.findById(payment.rentalId);
-            if (rental) {
-                rental.status = 'completed'; // Update rental status to completed
+            try {
+                const rental = await Rental.findById(payment.rentalId)
+                    .populate('car')
+                    .populate('userId');
+                    
+                if (!rental) {
+                    throw new Error('Rental not found');
+                }
+                
+                // Update rental status
+                rental.status = 'completed';
                 await rental.save();
+                
+                // Send invoice email
+                await emailService.sendInvoiceEmail(rental.userId.email, rental, payment);
+                  // Redirect to success page with orderId
+                return res.redirect(`${process.env.FRONTEND_URL}/payment/status?orderId=${orderId}`);
+            } catch (error) {
+                console.error('Error processing successful payment:', error);
+                return res.redirect(`${process.env.FRONTEND_URL}/payment/status?error=1&message=${encodeURIComponent(error.message)}`);
             }
-        }
-
-        // Redirect to frontend with status
-        res.redirect(`${process.env.FRONTEND_URL}/payment/status?orderId=${orderId}`);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        } else {
+            // Payment was not successful
+            return res.redirect(`${process.env.FRONTEND_URL}/payment/status?error=1&message=payment_failed`);
+        }    } catch (error) {
+        console.error('Payment return error:', error);
+        res.redirect(`${process.env.FRONTEND_URL}/payment/status?error=1`);
     }
 });
 
