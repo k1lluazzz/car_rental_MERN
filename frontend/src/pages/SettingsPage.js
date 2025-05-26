@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Box,
+/*     Box, */
     Container,
     Paper,
     Typography,
@@ -11,8 +11,8 @@ import {
     Alert,
     Grid,
     Switch,
-    FormControlLabel,
-    useTheme,
+    FormControlLabel
+   /*  useTheme, */
 } from '@mui/material';
 import {
     NotificationsActive,
@@ -20,12 +20,12 @@ import {
     Security,
     Language,
 } from '@mui/icons-material';
-import { useUser } from '../contexts/UserContext';
+/* import { useUser } from '../contexts/UserContext'; */
 import axios from 'axios';
 
 const SettingsPage = () => {
-    const theme = useTheme();
-    const { user, updateUser } = useUser();
+   /*  const theme = useTheme();
+    const { user, updateUser } = useUser(); */
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',

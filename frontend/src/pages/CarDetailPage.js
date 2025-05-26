@@ -8,12 +8,12 @@ import {
   Paper,
   Chip,
   Button,
-  Divider,
+
   Card,
   CardMedia,
   Skeleton,
   Rating,
-  IconButton,
+
 } from "@mui/material";
 import {
   DirectionsCar,

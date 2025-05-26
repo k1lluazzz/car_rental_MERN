@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { 
-    Box, 
-    Typography, 
-    TextField, 
-    Button, 
-    Checkbox, 
-    FormControlLabel, 
-    InputAdornment, 
-    IconButton, 
-    Container, 
-    Link, 
-    Paper, 
-    Divider 
+import {
+    Box,
+    Typography,
+    TextField,
+    Button,
+    Checkbox,
+    FormControlLabel,
+    InputAdornment,
+    IconButton,
+    Container,
+    Link,
+    Paper,
+
 } from '@mui/material';
 import {
     Visibility,
@@ -19,9 +19,8 @@ import {
     Person,
     Email,
     Phone,
-    Lock,
-    Google,
-    Facebook
+    Lock
+
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -79,7 +78,7 @@ const RegisterPage = () => {
                 phone,
                 password,
             });
-            
+
             setToast({
                 open: true,
                 message: 'Đăng ký thành công! Đang chuyển hướng...',
@@ -234,8 +233,8 @@ const RegisterPage = () => {
                         type="submit"
                         fullWidth
                         variant="contained"
-                        sx={{ 
-                            mt: 3, 
+                        sx={{
+                            mt: 3,
                             mb: 2,
                             py: 1.2,
                             fontSize: '1.1rem',
@@ -246,7 +245,7 @@ const RegisterPage = () => {
                     </Button>
 
                     <Box sx={{ textAlign: 'center', mb: 2 }}>
-                        <Link 
+                        <Link
                             onClick={() => navigate('/login')}
                             sx={{ cursor: 'pointer' }}
                             underline="hover"
@@ -255,30 +254,7 @@ const RegisterPage = () => {
                         </Link>
                     </Box>
 
-                    <Divider sx={{ my: 2 }}>
-                        <Typography color="text.secondary" sx={{ px: 1 }}>
-                            Hoặc đăng ký với
-                        </Typography>
-                    </Divider>
 
-                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<Google />}
-                            sx={{ py: 1 }}
-                        >
-                            Google
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<Facebook />}
-                            sx={{ py: 1 }}
-                        >
-                            Facebook
-                        </Button>
-                    </Box>
                 </form>
             </Paper>
             <Toast

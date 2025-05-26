@@ -7,7 +7,7 @@ import {
     InputAdornment, 
     IconButton,
     Paper,
-    Divider,
+
     Link,
     Container
 } from '@mui/material';
@@ -15,9 +15,7 @@ import {
     Visibility, 
     VisibilityOff,
     Email,
-    Lock,
-    Google,
-    Facebook 
+    Lock
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -173,30 +171,7 @@ const LoginPage = () => {
                         </Link>
                     </Box>
 
-                    <Divider sx={{ my: 2 }}>
-                        <Typography color="text.secondary" sx={{ px: 1 }}>
-                            Hoặc đăng nhập với
-                        </Typography>
-                    </Divider>
-
-                    <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<Google />}
-                            sx={{ py: 1 }}
-                        >
-                            Google
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="outlined"
-                            startIcon={<Facebook />}
-                            sx={{ py: 1 }}
-                        >
-                            Facebook
-                        </Button>
-                    </Box>
+                    
                 </form>
             </Paper>
             <Toast
