@@ -26,8 +26,7 @@ import Toast from './Toast';
 const AdminCarManagement = () => {
     const [cars, setCars] = useState([]);
     const [openDialog, setOpenDialog] = useState(false);
-    const [selectedCar, setSelectedCar] = useState(null);
-    const [formData, setFormData] = useState({
+    const [selectedCar, setSelectedCar] = useState(null);    const [formData, setFormData] = useState({
         name: '',
         brand: '',
         pricePerDay: '',
@@ -35,6 +34,7 @@ const AdminCarManagement = () => {
         seats: '',
         fuelType: '',
         location: '',
+        discount: '',
         image: null
     });
     const [toast, setToast] = useState({
@@ -66,8 +66,7 @@ const AdminCarManagement = () => {
 
     const handleOpenDialog = (car = null) => {
         if (car) {
-            setSelectedCar(car);
-            setFormData({
+            setSelectedCar(car);                    setFormData({
                 name: car.name,
                 brand: car.brand,
                 pricePerDay: car.pricePerDay,
@@ -75,6 +74,7 @@ const AdminCarManagement = () => {
                 seats: car.seats,
                 fuelType: car.fuelType,
                 location: car.location,
+                discount: car.discount || '',
                 image: null
             });
         } else {
@@ -244,8 +244,8 @@ const AdminCarManagement = () => {
                             <TableCell>Giá/ngày</TableCell>
                             <TableCell>Hộp số</TableCell>
                             <TableCell>Số ghế</TableCell>
-                            <TableCell>Nhiên liệu</TableCell>
-                            <TableCell>Vị trí</TableCell>
+                            <TableCell>Nhiên liệu</TableCell>                            <TableCell>Vị trí</TableCell>
+                            <TableCell>Giảm giá</TableCell>
                             <TableCell align="right">Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
@@ -259,6 +259,7 @@ const AdminCarManagement = () => {
                                 <TableCell>{car.seats}</TableCell>
                                 <TableCell>{car.fuelType}</TableCell>
                                 <TableCell>{car.location}</TableCell>
+                                <TableCell>{car.discount ? `${car.discount}%` : '-'}</TableCell>
                                 <TableCell align="right">
                                     <IconButton color="primary" onClick={() => handleOpenDialog(car)}>
                                         <Edit />
@@ -360,8 +361,7 @@ const AdminCarManagement = () => {
                                 <MenuItem value="Dầu">Dầu</MenuItem>
                                 <MenuItem value="Điện">Điện</MenuItem>
                             </TextField>
-                        </Grid>
-                        <Grid item xs={12}>
+                        </Grid>                        <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
                                 label="Vị trí"
@@ -370,7 +370,21 @@ const AdminCarManagement = () => {
                                 onChange={handleChange}
                                 required
                             />
-                        </Grid>                        <Grid item xs={12}>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Giảm giá (%)"
+                                name="discount"
+                                type="number"
+                                value={formData.discount}
+                                onChange={handleChange}
+                                InputProps={{
+                                    inputProps: { min: 0, max: 100 }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
                             <Box>
                                 <input
                                     type="file"

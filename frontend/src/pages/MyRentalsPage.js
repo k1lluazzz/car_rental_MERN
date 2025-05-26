@@ -227,8 +227,7 @@ const MyRentalsPage = () => {
                                             color={getStatusColor(rental.status)}
                                             size="small"
                                         />
-                                    </TableCell>
-                                    <TableCell>
+                                    </TableCell>                                    <TableCell>
                                         {rental.status === 'completed' && (
                                             <Button
                                                 variant="outlined"
@@ -239,6 +238,17 @@ const MyRentalsPage = () => {
                                                 sx={{ borderRadius: '8px' }}
                                             >
                                                 Trả xe
+                                            </Button>
+                                        )}
+                                        {rental.status === 'unpaid' && (
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                size="small"
+                                                onClick={() => navigate(`/payment/${rental._id}`)}
+                                                sx={{ borderRadius: '8px' }}
+                                            >
+                                                Thanh toán
                                             </Button>
                                         )}
                                         {rental.status === 'returned' && !rental.review && (

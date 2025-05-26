@@ -2,7 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { UserProvider, useUser } from './contexts/UserContext';
+import theme from './theme/theme';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import Footer from './components/Footer';
@@ -17,6 +19,8 @@ import DashboardPage from './pages/DashboardPage';
 import PaymentStatusPage from './pages/PaymentStatusPage';
 import PaymentPage from './pages/PaymentPage';
 import MyRentalsPage from './pages/MyRentalsPage';
+import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 // Protected Route Component
 const AdminRoute = ({ children }) => {
@@ -60,9 +64,10 @@ const AppContent = () => {
                                 <DashboardPage />
                             </AdminRoute>
                         }
-                    />
-                    <Route path="/payment/status" element={<PaymentStatusPage />} />
+                    />                    <Route path="/payment/status" element={<PaymentStatusPage />} />
                     <Route path="/payment/:rentalId" element={<PaymentPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                 </Routes>
             </div>
             <Footer />
@@ -73,13 +78,16 @@ const AppContent = () => {
 // Root App Component
 const App = () => {
     return (
-        <Router>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <UserProvider>
-                    <AppContent />
-                </UserProvider>
-            </LocalizationProvider>
-        </Router>
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <UserProvider>
+                        <AppContent />
+                    </UserProvider>
+                </LocalizationProvider>
+            </Router>
+        </ThemeProvider>
     );
 };
 

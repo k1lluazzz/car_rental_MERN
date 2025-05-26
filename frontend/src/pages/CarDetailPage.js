@@ -1,151 +1,339 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Box, Grid, Typography, Divider, Paper, Button } from '@mui/material';
-import axios from 'axios';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
-import ChairIcon from '@mui/icons-material/Chair';
-import BookingForm from '../components/BookingForm';
-import CarCard from '../components/CarCard';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Container,
+  Grid,
+  Box,
+  Typography,
+  Paper,
+  Chip,
+  Button,
+  Divider,
+  Card,
+  CardMedia,
+  Skeleton,
+  Rating,
+  IconButton,
+} from "@mui/material";
+import {
+  DirectionsCar,
+  LocalGasStation,
+  Person,
+  Speed,
+  ArrowBack,
+  LocationOn,
+} from "@mui/icons-material";
+import axios from "axios";
+import BookingForm from "../components/BookingForm";
 
 const CarDetailPage = () => {
-    const { id } = useParams();
-    const [car, setCar] = useState(null);
-    const [showBookingForm, setShowBookingForm] = useState(false);
-    const [similarCars, setSimilarCars] = useState([]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [car, setCar] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [similarCars, setSimilarCars] = useState([]);
+  const [showBookingForm, setShowBookingForm] = useState(false);
 
-    useEffect(() => {
-        const fetchCar = async () => {
-            try {
-                const response = await axios.get(`http://localhost:5000/api/cars/${id}`);
-                setCar(response.data);
-            } catch (error) {
-                console.error('Error fetching car details:', error);
-            }
-        };
-        fetchCar();
-    }, [id]);
+  useEffect(() => {
+    const fetchCarDetails = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/cars/${id}`
+        );
+        setCar(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching car details:", error);
+        setLoading(false);
+      }
+    };
 
-    useEffect(() => {
-        if (car) {
-            const fetchSimilarCars = async () => {
-                try {
-                    const response = await axios.get('http://localhost:5000/api/cars', {
-                        params: {
-                            brand: car.brand
-                        }
-                    });
-                    setSimilarCars(response.data.filter(c => c._id !== car._id));
-                } catch (error) {
-                    console.error('Error fetching similar cars:', error);
-                }
-            };
-            fetchSimilarCars();
+    fetchCarDetails();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchSimilarCars = async () => {
+      if (car) {
+        try {
+          const response = await axios.get(
+            `http://localhost:5000/api/cars/similar/${car._id}?brand=${car.brand}`
+          );
+          setSimilarCars(response.data);
+        } catch (error) {
+          console.error("Error fetching similar cars:", error);
         }
-    }, [car]);
+      }
+    };
 
-    if (!car) return <Typography>Loading...</Typography>;
+    fetchSimilarCars();
+  }, [car]);
 
+  if (loading) {
     return (
-        <Box sx={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-            <Grid container spacing={3}>
-                {/* Car Image */}
-                <Grid item xs={12} md={6}>
-                    <Paper elevation={3}>
-                        <img
-                            src={car.image || 'https://via.placeholder.com/600x400'}
-                            alt={car.name}
-                            style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
-                        />
-                    </Paper>
-                </Grid>
-
-                {/* Car Details */}
-                <Grid item xs={12} md={6}>
-                    <Paper elevation={3} sx={{ padding: '20px' }}>
-                        <Typography variant="h4" gutterBottom>
-                            {car.name}
-                        </Typography>
-                        {car.discount > 0 ? (
-                            <>
-                                <Typography 
-                                    variant="h5" 
-                                    color="text.secondary" 
-                                    sx={{ textDecoration: 'line-through' }}
-                                >
-                                    {car.pricePerDay.toLocaleString()}K/ngày
-                                </Typography>
-                                <Typography variant="h5" color="primary" gutterBottom>
-                                    {(car.pricePerDay * (1 - car.discount / 100)).toLocaleString()}K/ngày
-                                </Typography>
-                            </>
-                        ) : (
-                            <Typography variant="h5" color="primary" gutterBottom>
-                                {car.pricePerDay.toLocaleString()}K/ngày
-                            </Typography>
-                        )}
-                        <Divider sx={{ my: 2 }} />
-                        
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                            <DirectionsCarIcon />
-                            <Typography>{car.transmission}</Typography>
-                        </Box>
-                        
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                            <LocalGasStationIcon />
-                            <Typography>{car.fuelType}</Typography>
-                        </Box>
-                        
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                            <ChairIcon />
-                            <Typography>{car.seats} chỗ ngồi</Typography>
-                        </Box>
-                        
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                            <LocationOnIcon />
-                            <Typography>{car.location}</Typography>
-                        </Box>
-
-                        <Button 
-                            variant="contained" 
-                            color="primary" 
-                            fullWidth 
-                            sx={{ mt: 2 }}
-                            onClick={() => setShowBookingForm(true)}
-                        >
-                            Đặt xe ngay
-                        </Button>
-                    </Paper>
-                </Grid>
-
-            </Grid>
-
-            {showBookingForm && (
-                <Box sx={{ mt: 4 }}>
-                    <BookingForm 
-                        carId={id} 
-                        onBookingSuccess={() => setShowBookingForm(false)}
-                    />
-                </Box>
-            )}
-            {/* Similar Cars Section */}
-            {similarCars.length > 0 && (
-                    <Grid item xs={12}>
-                        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                            Xe tương tự ({similarCars.length})
-                        </Typography>
-                        <Grid container spacing={3}>
-                            {similarCars.map(similarCar => (
-                                <Grid item xs={12} sm={6} md={3} key={similarCar._id}>
-                                    <CarCard car={similarCar} />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Grid>
-                )}
-        </Box>
+      <Container sx={{ py: 4 }}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={7}>
+            <Skeleton variant="rectangular" height={400} />
+          </Grid>
+          <Grid item xs={12} md={5}>
+            <Skeleton variant="text" height={60} />
+            <Skeleton variant="text" height={30} />
+            <Skeleton variant="rectangular" height={200} sx={{ mt: 2 }} />
+          </Grid>
+        </Grid>
+      </Container>
     );
+  }
+
+  if (!car) {
+    return (
+      <Container sx={{ py: 4, textAlign: "center" }}>
+        <Typography variant="h5" color="error">
+          Không tìm thấy thông tin xe
+        </Typography>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
+          sx={{ mt: 2 }}
+        >
+          Quay lại
+        </Button>
+      </Container>
+    );
+  }
+
+  const features = [
+    { icon: <DirectionsCar />, label: car.transmission },
+    { icon: <LocalGasStation />, label: car.fuelType },
+    { icon: <Person />, label: `${car.seats} chỗ` },
+    { icon: <Speed />, label: "Số tự động" },
+  ];
+
+  return (
+    <Container sx={{ py: 4 }}>
+      <Button
+        startIcon={<ArrowBack />}
+        onClick={() => navigate(-1)}
+        sx={{ mb: 3 }}
+      >
+        Quay lại
+      </Button>
+
+      <Grid container spacing={4}>
+        {/* Car Image Section */}
+        <Grid item xs={12} md={7}>
+          <Card
+            sx={{
+              
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: 2,
+              overflow: "hidden",
+              boxShadow: 3,
+            }}
+          >
+            <CardMedia
+              component="img"
+        
+              image={car.image}
+              alt={car.name}
+              sx={{ objectFit: "contain" }}
+            />
+          </Card>
+        </Grid>
+
+        {/* Car Details Section */}
+        <Grid item xs={12} md={5}>
+          <Box>
+            <Typography variant="h4" gutterBottom fontWeight="bold">
+              {car.name}
+            </Typography>
+            <Typography
+              variant="h5"
+              color="primary"
+              gutterBottom
+              sx={{ fontWeight: 600 }}
+            >
+              {car.pricePerDay?.toLocaleString()}đ/ngày
+            </Typography>
+
+            <Box sx={{ mt: 3 }}>
+              <Grid container spacing={2}>
+                {features.map((feature, index) => (
+                  <Grid item xs={6} key={index}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        bgcolor: "background.default",
+                      }}
+                    >
+                      {feature.icon}
+                      <Typography variant="body2">{feature.label}</Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                Địa điểm
+              </Typography>
+              <Chip
+                icon={<LocationOn />}
+                label={car.location}
+                variant="outlined"
+                sx={{ mt: 1 }}
+              />
+            </Box>
+
+            {/* Hiển thị đánh giá và số chuyến */}
+            <Box sx={{ mt: 3 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Paper sx={{ p: 2, bgcolor: "background.default" }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Đánh giá trung bình
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                      <Rating
+                        value={car.rating || 0}
+                        precision={0.5}
+                        readOnly
+                      />
+                      <Typography variant="body2" sx={{ ml: 1 }}>
+                        ({car.totalRatings || 0} đánh giá)
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6}>
+                  <Paper sx={{ p: 2, bgcolor: "background.default" }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Số chuyến đã thực hiện
+                    </Typography>
+                    <Typography variant="h6" sx={{ mt: 1 }}>
+                      {car.trips || 0} chuyến
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+            {car.discount > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Chip
+                  label={`Giảm ${car.discount}%`}
+                  color="error"
+                  sx={{ fontWeight: "bold" }}
+                />
+              </Box>
+            )}
+            {/* Hiển thị danh sách đánh giá */}
+            {car.reviews && car.reviews.length > 0 && (
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                  Đánh giá từ khách hàng
+                </Typography>
+                <Grid container spacing={2}>
+                  {car.reviews.map((review, index) => (
+                    <Grid item xs={12} key={index}>
+                      <Paper sx={{ p: 2 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        >
+                          <Rating value={review.rating} readOnly size="small" />
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ ml: 2 }}
+                          >
+                            {new Date(review.date).toLocaleDateString("vi-VN")}
+                          </Typography>
+                        </Box>
+                        {review.comment && (
+                          <Typography variant="body2" color="text.secondary">
+                            {review.comment}
+                          </Typography>
+                        )}
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
+
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              sx={{ mt: 4 }}
+              onClick={() => setShowBookingForm(true)}
+            >
+              Đặt xe ngay
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Booking Form */}
+      {showBookingForm && (
+        <Paper sx={{ mt: 4, p: 3, borderRadius: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Thông tin đặt xe
+          </Typography>
+          <BookingForm
+            carId={id}
+            onBookingSuccess={() => navigate("/my-rentals")}
+          />
+        </Paper>
+      )}
+
+      {/* Similar Cars Section */}
+      {similarCars.length > 0 && (
+        <Box sx={{ mt: 6 }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+            Xe tương tự
+          </Typography>
+          <Grid container spacing={3}>
+            {similarCars.slice(0, 3).map((similarCar) => (
+              <Grid item xs={12} sm={6} md={4} key={similarCar._id}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    cursor: "pointer",
+                    transition: "0.3s",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: 4,
+                    },
+                  }}
+                  onClick={() => navigate(`/cars/${similarCar._id}`)}
+                >
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={similarCar.image}
+                    alt={similarCar.name}
+                  />
+                  <Box sx={{ p: 2 }}>
+                    <Typography variant="h6">{similarCar.name}</Typography>
+                    <Typography color="primary" variant="subtitle1">
+                      {similarCar.pricePerDay?.toLocaleString()}đ/ngày
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+    </Container>
+  );
 };
 
 export default CarDetailPage;
