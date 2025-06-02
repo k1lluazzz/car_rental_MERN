@@ -95,6 +95,19 @@ const MyRentalsPage = () => {
     const handleReturnClick = (rental) => {
         setSelectedRental(rental);
         setReturnModalOpen(true);
+    };    const handleChangeCar = (selectedRental) => {
+        if (!selectedRental) {
+            console.error('No rental selected');
+            return;
+        }
+        const params = new URLSearchParams({
+            startDate: selectedRental.startDate,
+            endDate: selectedRental.endDate,
+            location: selectedRental.car?.location || '',
+            rentalId: selectedRental._id // Added rental ID
+        });
+        console.log('Navigating with params:', params.toString());
+        navigate(`/cars?${params.toString()}`);
     };
 
     const getStatusText = (status) => {
@@ -240,16 +253,25 @@ const MyRentalsPage = () => {
                                                 Trả xe
                                             </Button>
                                         )}
-                                        {rental.status === 'unpaid' && (
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                size="small"
-                                                onClick={() => navigate(`/payment/${rental._id}`)}
-                                                sx={{ borderRadius: '8px' }}
-                                            >
-                                                Thanh toán
-                                            </Button>
+                                        {rental.status === 'unpaid' && (                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={() => handleChangeCar(rental)}
+                                                    sx={{ borderRadius: '8px' }}
+                                                >
+                                                    Chọn xe khác
+                                                </Button>                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={() => navigate(`/payment/${rental._id}?source=carchange`)}
+                                                    sx={{ borderRadius: '8px' }}
+                                                >
+                                                    Thanh toán
+                                                </Button>
+                                            </Box>
                                         )}
                                         {rental.status === 'returned' && !rental.review && (
                                             <Button

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
     Box, 
     Typography, 
@@ -11,11 +11,15 @@ import {
     Divider,
     IconButton,
     Collapse,
-    Button
+    Button,
+    Chip,
+    CircularProgress,
+    Fab
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CarList from '../components/CarList';
 import DriveEtaIcon from '@mui/icons-material/DriveEta';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 const RentalsPage = () => {
     const [filters, setFilters] = useState({
@@ -25,22 +29,85 @@ const RentalsPage = () => {
         seats: '',
         fuelType: ''
     });
+    const [tempFilters, setTempFilters] = useState({
+        priceRange: [0, 5000],
+        brand: '',
+        transmission: '',
+        seats: '',
+        fuelType: ''
+    });
     const [showFilters, setShowFilters] = useState(true);
-
-    const handleFilterChange = (field, value) => {
-        setFilters(prev => ({
+    const [isFiltering, setIsFiltering] = useState(false);
+    const [activeFilters, setActiveFilters] = useState(0);
+    const [debouncedRange, setDebouncedRange] = useState(filters.priceRange);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+      const handleFilterChange = (field, value) => {
+        setTempFilters(prev => ({
             ...prev,
             [field]: value
         }));
     };
 
-    const handleResetFilters = () => {
-        setFilters({
+    const handleApplyFilters = () => {
+        setIsFiltering(true);
+        setFilters(tempFilters);
+        
+        // Count active filters
+        const active = Object.entries(tempFilters).reduce((count, [key, value]) => {
+            if (key === 'priceRange') {
+                return count + (value[0] > 0 || value[1] < 5000 ? 1 : 0);
+            }
+            return count + (value ? 1 : 0);
+        }, 0);
+        
+        setActiveFilters(active);
+        setTimeout(() => setIsFiltering(false), 500);
+    };    const handleResetFilters = () => {
+        const defaultFilters = {
             priceRange: [0, 5000],
             brand: '',
             transmission: '',
             seats: '',
             fuelType: ''
+        };
+        setTempFilters(defaultFilters);
+        setIsFiltering(true);
+        setFilters(defaultFilters);
+        setActiveFilters(0);
+        setTimeout(() => setIsFiltering(false), 500);
+    };
+
+    // Debounced price range handler
+    const debouncedHandlePriceChange = useCallback(
+        (newValue) => {
+            setDebouncedRange(newValue);
+            const timeoutId = setTimeout(() => {
+                handleFilterChange('priceRange', newValue);
+            }, 500);
+            return () => clearTimeout(timeoutId);
+        },
+        [handleFilterChange]
+    );
+
+    // Handle immediate price range UI updates
+    const handlePriceRangeChange = (event, newValue) => {
+        setDebouncedRange(newValue);
+        debouncedHandlePriceChange(newValue);
+    };
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.pageYOffset > 300);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
         });
     };
 
@@ -64,20 +131,30 @@ const RentalsPage = () => {
                 </Typography>
             </Box>
 
-            {/* Filter Section */}
-            <Paper 
+            {/* Filter Section */}            <Paper 
                 sx={{ 
-                    p: 3, 
+                    p: { xs: 2, sm: 3 }, 
                     mb: 4,
                     borderRadius: 2,
                     boxShadow: 2
                 }}
-            >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FilterListIcon /> Bộ lọc tìm kiếm
-                    </Typography>
-                    <IconButton onClick={() => setShowFilters(!showFilters)}>
+            ><Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <FilterListIcon /> Bộ lọc tìm kiếm
+                        </Typography>
+                        {activeFilters > 0 && (
+                            <Chip 
+                                label={`${activeFilters} bộ lọc đang áp dụng`}
+                                color="primary"
+                                size="small"
+                            />
+                        )}
+                    </Box>
+                    <IconButton 
+                        onClick={() => setShowFilters(!showFilters)}
+                        color={activeFilters > 0 ? "primary" : "default"}
+                    >
                         <FilterListIcon />
                     </IconButton>
                 </Box>
@@ -88,8 +165,8 @@ const RentalsPage = () => {
                         <Grid item xs={12}>
                             <Typography gutterBottom>Giá thuê (K/ngày)</Typography>
                             <Slider
-                                value={filters.priceRange}
-                                onChange={(e, newValue) => handleFilterChange('priceRange', newValue)}
+                                value={debouncedRange}
+                                onChange={handlePriceRangeChange}
                                 valueLabelDisplay="auto"
                                 min={0}
                                 max={5000}
@@ -115,8 +192,7 @@ const RentalsPage = () => {
                             <TextField
                                 select
                                 label="Thương hiệu"
-                                fullWidth
-                                value={filters.brand}
+                                fullWidth                                value={tempFilters.brand}
                                 onChange={(e) => handleFilterChange('brand', e.target.value)}
                                 variant="outlined"
                             >
@@ -132,8 +208,7 @@ const RentalsPage = () => {
                             <TextField
                                 select
                                 label="Số ghế"
-                                fullWidth
-                                value={filters.seats}
+                                fullWidth                                value={tempFilters.seats}
                                 onChange={(e) => handleFilterChange('seats', e.target.value)}
                                 variant="outlined"
                             >
@@ -149,8 +224,7 @@ const RentalsPage = () => {
                             <TextField
                                 select
                                 label="Hộp số"
-                                fullWidth
-                                value={filters.transmission}
+                                fullWidth                                value={tempFilters.transmission}
                                 onChange={(e) => handleFilterChange('transmission', e.target.value)}
                                 variant="outlined"
                             >
@@ -164,8 +238,7 @@ const RentalsPage = () => {
                             <TextField
                                 select
                                 label="Nhiên liệu"
-                                fullWidth
-                                value={filters.fuelType}
+                                fullWidth                                value={tempFilters.fuelType}
                                 onChange={(e) => handleFilterChange('fuelType', e.target.value)}
                                 variant="outlined"
                             >
@@ -174,16 +247,31 @@ const RentalsPage = () => {
                                 <MenuItem value="Dầu">Dầu</MenuItem>
                                 <MenuItem value="Điện">Điện</MenuItem>
                             </TextField>
-                        </Grid>
-
-                        <Grid item xs={12}>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                                <Button 
-                                    variant="outlined" 
-                                    onClick={handleResetFilters}
-                                >
-                                    Đặt lại
-                                </Button>
+                        </Grid>                        <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                {isFiltering && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <CircularProgress size={20} />
+                                        <Typography variant="body2" color="text.secondary">
+                                            Đang lọc...
+                                        </Typography>
+                                    </Box>
+                                )}                                <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
+                                    <Button 
+                                        variant="outlined" 
+                                        onClick={handleResetFilters}
+                                        disabled={activeFilters === 0}
+                                    >
+                                        Đặt lại
+                                    </Button>
+                                    <Button 
+                                        variant="contained" 
+                                        onClick={handleApplyFilters}
+                                        disabled={JSON.stringify(tempFilters) === JSON.stringify(filters)}
+                                    >
+                                        Áp dụng
+                                    </Button>
+                                </Box>
                             </Box>
                         </Grid>
                     </Grid>
@@ -194,6 +282,21 @@ const RentalsPage = () => {
             <Box sx={{ mb: 4 }}>
                 <CarList filters={filters} />
             </Box>
+
+            {/* Scroll to Top Button */}
+            <Fab 
+                color="primary" 
+                size="small"
+                onClick={scrollToTop}
+                sx={{
+                    position: 'fixed',
+                    bottom: 16,
+                    right: 16,
+                    display: showScrollTop ? 'flex' : 'none'
+                }}
+            >
+                <KeyboardArrowUpIcon />
+            </Fab>
         </Container>
     );
 };

@@ -15,28 +15,47 @@ const CarList = ({ filters }) => {
     const [loading, setLoading] = useState(true);
     const carsPerPage = 9;
     const navigate = useNavigate();    useEffect(() => {
+        let isMounted = true;
         const fetchCars = async () => {
             setLoading(true);
             try {
-                console.log('Fetching cars with filters:', filters); // Debug log
+                // Add a small delay to show loading state
+                await new Promise(resolve => setTimeout(resolve, 500));
+                  // Convert price from K to actual value
+                const minPrice = filters?.priceRange?.[0] * 1000;
+                const maxPrice = filters?.priceRange?.[1] * 1000;
+                
                 const response = await axios.get('http://localhost:5000/api/cars', {
                     params: {
-                        brand: filters?.brand,
-                        seats: filters?.seats,
-                        fuelType: filters?.fuelType,
-                        transmission: filters?.transmission,
-                        minPrice: filters?.priceRange?.[0],
-                        maxPrice: filters?.priceRange?.[1]
-                    }                });
-                console.log('Cars data from API:', response.data); // Debug log
-                setCars(response.data);
+                        brand: filters?.brand || undefined,
+                        seats: filters?.seats || undefined,
+                        fuelType: filters?.fuelType || undefined,
+                        transmission: filters?.transmission || undefined,
+                        minPrice: minPrice || undefined,
+                        maxPrice: maxPrice || undefined
+                    }
+                });
+                
+                if (isMounted) {
+                    setCars(response.data);
+                    // Reset to first page when filters change
+                    setCurrentPage(1);
+                }
             } catch (error) {
                 console.error('Error fetching cars:', error);
+                if (isMounted) {
+                    setCars([]);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
         fetchCars();
+        return () => {
+            isMounted = false;
+        };
     }, [filters]);
 
     const handlePageChange = (event, value) => {
@@ -64,9 +83,24 @@ const CarList = ({ filters }) => {
     // Calculate the cars to display on the current page
     const indexOfLastCar = currentPage * carsPerPage;
     const indexOfFirstCar = indexOfLastCar - carsPerPage;
-    const currentCars = cars.slice(indexOfFirstCar, indexOfLastCar);
+    const currentCars = cars.slice(indexOfFirstCar, indexOfLastCar);    if (loading) return <LoadingSkeleton />;
 
-    if (loading) return <LoadingSkeleton />;
+    if (!loading && cars.length === 0) {
+        return (
+            <Box sx={{ 
+                textAlign: 'center', 
+                py: 8,
+                px: 2
+            }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                    Không tìm thấy xe phù hợp với bộ lọc
+                </Typography>
+                <Typography color="text.secondary">
+                    Vui lòng thử lại với bộ lọc khác
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ 

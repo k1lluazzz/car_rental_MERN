@@ -43,14 +43,43 @@ const HeroSection = () => {
             );
         }
         setTimeModalOpen(false);
-    };
-
-    const handleSearch = () => {
-        if (selectedLocation) {
-            navigate(`/cars?location=${encodeURIComponent(selectedLocation)}`); // Navigate to CarSearchResultsPage
-        } else {
+    };    const handleSearch = () => {
+        if (!selectedLocation) {
             alert('Vui lòng chọn khu vực.');
+            return;
         }
+
+        let searchParams = new URLSearchParams();
+        searchParams.append('location', selectedLocation);
+
+        if (selectedOptions.startDate && selectedOptions.startTime) {
+            const startDateTime = new Date(selectedOptions.startDate);
+            startDateTime.setHours(
+                selectedOptions.startTime.getHours(),
+                selectedOptions.startTime.getMinutes()
+            );
+            searchParams.append('startDate', startDateTime.toISOString());
+
+            let endDateTime;
+            if (rentalType === 'day' && selectedOptions.endDate && selectedOptions.endTime) {
+                endDateTime = new Date(selectedOptions.endDate);
+                endDateTime.setHours(
+                    selectedOptions.endTime.getHours(),
+                    selectedOptions.endTime.getMinutes()
+                );
+            } else if (rentalType === 'hour' && selectedOptions.duration) {
+                endDateTime = new Date(startDateTime);
+                endDateTime.setHours(
+                    endDateTime.getHours() + parseInt(selectedOptions.duration, 10)
+                );
+            }
+
+            if (endDateTime) {
+                searchParams.append('endDate', endDateTime.toISOString());
+            }
+        }
+
+        navigate(`/cars?${searchParams.toString()}`);
     };
 
     const today = new Date();

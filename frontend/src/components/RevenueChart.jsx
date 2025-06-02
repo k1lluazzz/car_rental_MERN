@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-    Area,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -10,8 +9,10 @@ import {
     Bar,
     ComposedChart
 } from 'recharts';
-import { Box, Typography, Paper, ToggleButton, ToggleButtonGroup, Card, Divider } from '@mui/material';
+import { Box, Typography, Paper, Card, Divider, Button } from '@mui/material';
 import { formatNumberToVND } from '../utils/format';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import * as XLSX from 'xlsx';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -33,13 +34,13 @@ const CustomTooltip = ({ active, payload, label }) => {
                 <Divider sx={{ mb: 1 }} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography sx={{ color: 'primary.main', fontWeight: 500 }}>
-                        Doanh thu: {formatNumberToVND(data.revenue)}
+                        Doanh thu thực: {formatNumberToVND(data.revenue)}
                     </Typography>
                     <Typography sx={{ color: 'success.main' }}>
                         Doanh thu gốc: {formatNumberToVND(data.originalRevenue)}
                     </Typography>
                     <Typography sx={{ color: 'error.main' }}>
-                        Giảm giá: {formatNumberToVND(data.discountTotal)}
+                        Tổng giảm giá: {formatNumberToVND(data.discountTotal)}
                     </Typography>
                     <Divider sx={{ my: 0.5 }} />
                     <Typography>
@@ -47,10 +48,6 @@ const CustomTooltip = ({ active, payload, label }) => {
                     </Typography>
                     <Typography>
                         <b>Thời gian thuê TB:</b> {data.averageRentalDuration.toFixed(1)} ngày
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-                        <b>Các loại xe:</b><br />
-                        {data.carTypes.map(car => car.carName).join(', ')}
                     </Typography>
                 </Box>
             </Paper>
@@ -60,176 +57,196 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const RevenueChart = ({ data }) => {
-    const [chartType, setChartType] = useState('revenue');
-
-    const handleChartTypeChange = (event, newType) => {
-        if (newType !== null) {
-            setChartType(newType);
-        }
-    };
-
     // Calculate totals
     const totals = data.reduce((acc, curr) => ({
         revenue: (acc.revenue || 0) + curr.revenue,
+        originalRevenue: (acc.originalRevenue || 0) + curr.originalRevenue,
+        discountTotal: (acc.discountTotal || 0) + curr.discountTotal,
         totalRentals: (acc.totalRentals || 0) + curr.totalRentals,
         avgDuration: (acc.avgDuration || 0) + curr.averageRentalDuration
     }), {});
     totals.avgDuration = totals.avgDuration / data.length;
 
+    const handleExportExcel = () => {
+        const ws = XLSX.utils.json_to_sheet(data.map(item => ({
+            'Tháng': item.month,
+            'Doanh thu thực': item.revenue,
+            'Doanh thu gốc': item.originalRevenue,
+            'Tổng giảm giá': item.discountTotal,
+            'Số lượt thuê': item.totalRentals,
+            'Thời gian thuê TB (ngày)': item.averageRentalDuration.toFixed(1),
+            'Các loại xe': item.carTypes.map(car => `${car.carName} (${car.brand})`).join(', ')
+        })));
+
+        // Add totals row
+        XLSX.utils.sheet_add_json(ws, [{
+            'Tháng': 'TỔNG CỘNG',
+            'Doanh thu thực': totals.revenue,
+            'Doanh thu gốc': totals.originalRevenue,
+            'Tổng giảm giá': totals.discountTotal,
+            'Số lượt thuê': totals.totalRentals,
+            'Thời gian thuê TB (ngày)': totals.avgDuration.toFixed(1)
+        }], { skipHeader: true, origin: -1 });
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Báo cáo doanh thu');
+        XLSX.writeFile(wb, `Bao_cao_doanh_thu_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
     return (
         <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    {chartType === 'revenue' ? 'Biểu Đồ Doanh Thu' : 
-                     chartType === 'rentals' ? 'Thống Kê Lượt Thuê Xe' : 
-                     'Thời Gian Thuê Trung Bình'}
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    Thống kê doanh thu
                 </Typography>
-                <Divider sx={{ mb: 2 }} />
-                
-                {/* Summary Cards */}
-                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                    <Card sx={{ flex: 1, p: 2, minWidth: 200, bgcolor: 'primary.light', color: 'white' }}>
-                        <Typography variant="subtitle2">Tổng doanh thu</Typography>
-                        <Typography variant="h6">{formatNumberToVND(totals.revenue)}</Typography>
-                    </Card>
-                    <Card sx={{ flex: 1, p: 2, minWidth: 200, bgcolor: 'success.light', color: 'white' }}>
-                        <Typography variant="subtitle2">Tổng lượt thuê</Typography>
-                        <Typography variant="h6">{totals.totalRentals} lượt</Typography>
-                    </Card>
-                    <Card sx={{ flex: 1, p: 2, minWidth: 200, bgcolor: 'info.light', color: 'white' }}>
-                        <Typography variant="subtitle2">Thời gian thuê TB</Typography>
-                        <Typography variant="h6">{totals.avgDuration.toFixed(1)} ngày</Typography>
-                    </Card>
-                </Box>
-
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <ToggleButtonGroup
-                        value={chartType}
-                        exclusive
-                        onChange={handleChartTypeChange}
-                        color="primary"
-                        size="small"
-                        sx={{
-                            '& .MuiToggleButton-root': {
-                                px: 3,
-                                py: 1,
-                                borderRadius: '4px !important',
-                                mx: 0.5,
-                                '&.Mui-selected': {
-                                    bgcolor: 'primary.main',
-                                    color: 'white',
-                                    '&:hover': {
-                                        bgcolor: 'primary.dark',
-                                    },
-                                },
-                            },
-                        }}
-                    >
-                        <ToggleButton value="revenue">Doanh thu</ToggleButton>
-                        <ToggleButton value="rentals">Số lượt thuê</ToggleButton>
-                        <ToggleButton value="duration">Thời gian thuê</ToggleButton>
-                    </ToggleButtonGroup>
-                </Box>
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleExportExcel}
+                >
+                    Xuất Excel
+                </Button>
             </Box>
 
-            <ResponsiveContainer width="100%" height={500}>                <ComposedChart
-                    data={data}
-                    margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 20,
-                    }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                    <XAxis 
-                        dataKey="month" 
-                        tick={{ fill: '#666' }}
-                        axisLine={{ stroke: '#ccc' }}
-                    />
-                    <YAxis 
-                        yAxisId="left"
-                        tick={{ fill: '#666' }}
-                        axisLine={{ stroke: '#ccc' }}
-                        tickFormatter={value => 
-                            chartType === 'revenue' 
-                                ? `${(value / 1000000).toFixed(0)}M` 
-                                : value
-                        }
-                    />
-                    <YAxis 
-                        yAxisId="right" 
-                        orientation="right"
-                        tick={{ fill: '#666' }}
-                        axisLine={{ stroke: '#ccc' }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                        wrapperStyle={{
-                            paddingTop: '20px'
-                        }}
-                    />
+            {/* Summary Cards */}
+            <Box sx={{ display: 'grid', gap: 2, mb: 4, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' } }}>
+                <Card sx={{ p: 2.5, bgcolor: '#e3f2fd', boxShadow: 3, borderLeft: 6, borderColor: 'primary.main' }}>
+                    <Typography variant="subtitle2" color="primary" gutterBottom>DOANH THU THỰC</Typography>
+                    <Typography variant="h5" color="primary.dark" sx={{ fontWeight: 'bold' }}>{formatNumberToVND(totals.revenue)}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                        Sau khi trừ giảm giá
+                    </Typography>
+                </Card>
+                <Card sx={{ p: 2.5, bgcolor: '#e8f5e9', boxShadow: 3, borderLeft: 6, borderColor: 'success.main' }}>
+                    <Typography variant="subtitle2" color="success.main" gutterBottom>DOANH THU GỐC</Typography>
+                    <Typography variant="h5" color="success.dark" sx={{ fontWeight: 'bold' }}>{formatNumberToVND(totals.originalRevenue)}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                        Trước khi áp dụng giảm giá
+                    </Typography>
+                </Card>
+                <Card sx={{ p: 2.5, bgcolor: '#ffebee', boxShadow: 3, borderLeft: 6, borderColor: 'error.main' }}>
+                    <Typography variant="subtitle2" color="error.main" gutterBottom>TỔNG GIẢM GIÁ</Typography>
+                    <Typography variant="h5" color="error.dark" sx={{ fontWeight: 'bold' }}>{formatNumberToVND(totals.discountTotal)}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                        {((totals.discountTotal / totals.originalRevenue) * 100).toFixed(1)}% doanh thu gốc
+                    </Typography>
+                </Card>
+            </Box>
 
-                    {chartType === 'revenue' && (
-                        <>
-                            <Area
-                                yAxisId="left"
-                                type="monotone"
-                                dataKey="originalRevenue"
-                                name="Doanh thu gốc"
-                                stroke="#4caf50"
-                                fill="#4caf50"
-                                fillOpacity={0.2}
-                                strokeWidth={2}
-                            />
-                            <Area
-                                yAxisId="left"
-                                type="monotone"
-                                dataKey="revenue"
-                                name="Doanh thu thực"
-                                stroke="#2196f3"
-                                fill="#2196f3"
-                                fillOpacity={0.2}
-                                strokeWidth={2}
-                            />
-                            <Bar
-                                yAxisId="right"
-                                dataKey="discountTotal"
-                                name="Giảm giá"
-                                fill="#f44336"
-                                fillOpacity={0.8}
-                            />
-                        </>
-                    )}
-
-                    {chartType === 'rentals' && (
+            {/* Biểu đồ Doanh thu gốc và thực */}
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: 'primary.main' }}>
+                    Biểu đồ doanh thu gốc và thực tế
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fill: '#666', fontSize: 12 }} />
+                        <YAxis 
+                            tick={{ fill: '#666', fontSize: 12 }}
+                            tickFormatter={value => `${(value / 1000000).toFixed(1)}M`}
+                            label={{ 
+                                value: 'Doanh thu (VNĐ)', 
+                                angle: -90,
+                                position: 'insideLeft',
+                                style: { textAnchor: 'middle', fill: '#666' }
+                            }}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
                         <Bar
-                            yAxisId="left"
-                            dataKey="totalRentals"
+                            dataKey="originalRevenue"
+                            name="Doanh thu gốc"
+                            fill="#81c784"
+                            strokeWidth={0}
+                            barSize={30}
+                            radius={[3, 3, 0, 0]}
+                        />
+                        <Bar
+                            dataKey="revenue"
+                            name="Doanh thu thực"
+                            fill="#64b5f6"
+                            strokeWidth={0}
+                            barSize={30}
+                            radius={[3, 3, 0, 0]}
+                        />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </Paper>
+
+            {/* Biểu đồ Giảm giá */}
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: 'error.main' }}>
+                    Biểu đồ giảm giá theo tháng
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fill: '#666', fontSize: 12 }} />
+                        <YAxis 
+                            tick={{ fill: '#666', fontSize: 12 }}
+                            tickFormatter={value => `${(value / 1000000).toFixed(1)}M`}
+                            label={{ 
+                                value: 'Giảm giá (VNĐ)',
+                                angle: -90,
+                                position: 'insideLeft',
+                                style: { textAnchor: 'middle', fill: '#666' }
+                            }}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Bar                            dataKey="discountTotal"
+                            name="Tổng giảm giá"
+                            fill="#d32f2f"
+                            fillOpacity={0.6}
+                            radius={[3, 3, 0, 0]}
+                            barSize={30}
+                        />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </Paper>
+
+            {/* Biểu đồ Số lượt thuê */}
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: 'info.main' }}>
+                    Biểu đồ số lượt thuê xe theo tháng
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fill: '#666', fontSize: 12 }} />
+                        <YAxis 
+                            tick={{ fill: '#666', fontSize: 12 }}
+                            label={{ 
+                                value: 'Số lượt thuê',
+                                angle: -90,
+                                position: 'insideLeft',
+                                style: { textAnchor: 'middle', fill: '#666' }
+                            }}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Bar                            dataKey="totalRentals"
                             name="Số lượt thuê"
                             fill="#2196f3"
-                            radius={[4, 4, 0, 0]}
+                            radius={[3, 3, 0, 0]}
+                            barSize={30}
                         />
-                    )}
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </Paper>
 
-                    {chartType === 'duration' && (
-                        <Area
-                            yAxisId="left"
-                            type="monotone"
-                            dataKey="averageRentalDuration"
-                            name="Thời gian thuê TB (ngày)"
-                            stroke="#9c27b0"
-                            fill="#9c27b0"
-                            fillOpacity={0.2}
-                            strokeWidth={2}
-                        />                    )}
-                </ComposedChart>
-            </ResponsiveContainer>
-
-            {/* Legend explanation */}
-            <Box sx={{ mt: 3, px: 2 }}>
+            {/* Footer Notes */}
+            <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ fontStyle: 'italic' }}>
+                    * Hover chuột lên biểu đồ để xem chi tiết từng tháng
+                </Typography>
                 <Typography variant="body2" color="text.secondary" align="center">
-                    * Hover chuột lên biểu đồ để xem chi tiết. Số liệu doanh thu được hiển thị theo đơn vị triệu đồng (M).
+                    * Doanh thu được hiển thị theo đơn vị triệu đồng (M)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, color: 'primary.main' }}>
+                    Bấm nút "Xuất Excel" để tải về báo cáo chi tiết đầy đủ
                 </Typography>
             </Box>
         </Paper>

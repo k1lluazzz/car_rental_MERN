@@ -68,6 +68,10 @@ const CarDetailPage = () => {
     fetchSimilarCars();
   }, [car]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   if (loading) {
     return (
       <Container sx={{ py: 4 }}>

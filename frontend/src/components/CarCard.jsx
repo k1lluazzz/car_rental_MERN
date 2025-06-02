@@ -1,11 +1,23 @@
 import React from 'react';
-import { Card, CardContent, CardMedia, Typography, Box } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { 
+    Card, 
+    CardContent, 
+    CardMedia, 
+    Typography, 
+    Box, 
+    Chip,
+    Rating
+} from '@mui/material';
+import {
+    DirectionsCar as DirectionsCarIcon,
+    LocalGasStation as LocalGasStationIcon,
+    Chair as ChairIcon,
+    LocationOn as LocationOnIcon,
+    Star as StarIcon
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-const CarCard = ({ car }) => {
+const CarCard = ({ car, selectedStartDate, selectedEndDate }) => {
     const navigate = useNavigate();
 
     console.log('Car data:', car); // Debug log
@@ -14,65 +26,116 @@ const CarCard = ({ car }) => {
         navigate(`/cars/${car._id}`);
     };    const imageUrl = car.image || 'https://res.cloudinary.com/dhyqgl7ie/image/upload/v1/car_images/default-car.png';
 
+    // Calculate total rental time
+    const calculateRentalPeriod = () => {
+        if (!selectedStartDate || !selectedEndDate) return null;
+        
+        const start = new Date(selectedStartDate);
+        const end = new Date(selectedEndDate);
+        const hours = Math.ceil((end - start) / (1000 * 60 * 60));
+        
+        if (hours >= 24) {
+            const days = Math.ceil(hours / 24);
+            return `${days} ngày`;
+        }
+        return `${hours} giờ`;
+    };
+
+    const rentalPeriod = calculateRentalPeriod();
+    const totalPrice = rentalPeriod && car.pricePerDay * (parseInt(rentalPeriod) || 1);
+
     return (
         <Card 
             onClick={handleCardClick}
             sx={{ 
-                maxWidth: 345, 
-                margin: 'auto', 
-                borderRadius: '10px', 
-                boxShadow: 3,
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease-in-out',
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
                 '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: 6
+                    transition: 'transform 0.2s ease-in-out'
                 }
             }}
         >
-            <CardMedia
-                component="img"
-                height="180"
-                image={imageUrl}
-                alt={car.name}
-                onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://res.cloudinary.com/your-cloud-name/image/upload/v1/car_images/default-car.png';
-                }}
-            />
-            <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }} noWrap>
+            <Box sx={{ position: 'relative' }}>
+                <CardMedia
+                    component="img"
+                    height="200"
+                    image={imageUrl}
+                    alt={car.name}
+                    sx={{ objectFit: 'cover' }}
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://res.cloudinary.com/your-cloud-name/image/upload/v1/car_images/default-car.png';
+                    }}
+                />
+                {car.discount > 0 && (
+                    <Chip
+                        label={`Giảm ${car.discount}%`}
+                        color="error"
+                        size="small"
+                        sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            fontWeight: 'bold'
+                        }}
+                    />
+                )}
+            </Box>
+
+            <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }} noWrap>
                     {car.name}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: '10px', marginTop: '10px', color: 'text.secondary' }}>
-                    <Typography variant="body2">
-                        <DirectionsCarIcon fontSize="small" /> {car.transmission}
-                    </Typography>
-                    <Typography variant="body2">
-                        {car.seats} chỗ
-                    </Typography>
-                    <Typography variant="body2">
-                        {car.fuelType}
-                    </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '10px', color: 'text.secondary' }}>
-                    <LocationOnIcon fontSize="small" />
-                    <Typography variant="body2" noWrap>
-                        {car.location}
+
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Rating 
+                        value={car.rating || 0}
+                        precision={0.5}
+                        readOnly
+                        size="small"
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                        ({car.totalRatings || 0} đánh giá)
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>                            <StarIcon sx={{ color: '#FFD700', fontSize: 'small' }} />                            <Typography variant="body2" sx={{ fontWeight: 'bold', ml: 0.5 }}>
-                                {typeof car.rating === 'number' ? `${car.rating.toFixed(1)}/5` : '0.0/5'}
-                            </Typography>
-                        </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                            {car.trips || 0} chuyến
+
+                <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <DirectionsCarIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2">{car.transmission}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <LocalGasStationIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2">{car.fuelType}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <ChairIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2">{car.seats} chỗ</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <LocationOnIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" noWrap>
+                            {car.location}
                         </Typography>
                     </Box>
+                </Box>
+
+                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(0, 0, 0, 0.12)' }}>
                     <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                        {car.pricePerDay}K/giờ
+                        {car.pricePerDay.toLocaleString()}đ/ngày
                     </Typography>
+                    {rentalPeriod && (
+                        <>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                Thời gian thuê: {rentalPeriod}
+                            </Typography>
+                            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                                Tổng: {totalPrice?.toLocaleString()}đ
+                            </Typography>
+                        </>
+                    )}
                 </Box>
             </CardContent>
         </Card>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Box,
     Grid,
@@ -20,11 +20,13 @@ const PaymentPage = () => {
     const { rentalId } = useParams();
     const [rental, setRental] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [checking, setChecking] = useState(false);
     const [toast, setToast] = useState({
         open: false,
         message: '',
         severity: 'success'
     });
+    const navigate = useNavigate();
 
     const calculateTotalPrice = () => {
         const days = Math.ceil((new Date(rental.endDate) - new Date(rental.startDate)) / (1000 * 60 * 60 * 24));
@@ -64,8 +66,40 @@ const PaymentPage = () => {
         }
     }, [rentalId]);
 
-    const handlePayment = async (method) => {
+    const checkCarAvailability = async () => {
         try {
+            setChecking(true);
+            const response = await axios.get(`http://localhost:5000/api/cars/${rental.car._id}/availability`, {
+                params: {
+                    startDate: rental.startDate,
+                    endDate: rental.endDate
+                }
+            });
+            return response.data.available;
+        } catch (error) {
+            console.error('Error checking car availability:', error);
+            return false;
+        } finally {
+            setChecking(false);
+        }
+    };    const handlePayment = async (method) => {
+        try {
+            // Only check availability if this is not a car change payment
+            const params = new URLSearchParams(window.location.search);
+            const isCarChange = params.get('source') === 'carchange';
+            
+            if (!isCarChange) {
+                const isAvailable = await checkCarAvailability();
+                if (!isAvailable) {
+                    setToast({
+                        open: true,
+                        message: 'Xe đã được đặt trong thời gian này. Vui lòng chọn xe khác.',
+                        severity: 'error'
+                    });
+                    return;
+                }
+            }
+
             const response = await axios.post('http://localhost:5000/api/payments/create_payment_url', {
                 rentalId,
                 amount: calculateTotalPrice(),
@@ -164,8 +198,9 @@ const PaymentPage = () => {
                             variant="contained"
                             onClick={() => handlePayment('vnpay')}
                             startIcon={<PaymentIcon />}
+                            disabled={checking}
                         >
-                            VNPay
+                            {checking ? 'Đang kiểm tra...' : 'VNPay'}
                         </Button>
                     </Grid>
                    {/*  <Grid item xs={12} sm={4}>
