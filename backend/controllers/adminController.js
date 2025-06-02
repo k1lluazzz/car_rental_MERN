@@ -52,9 +52,13 @@ const getMonthlyRevenue = async (req, res) => {
                         month: { $month: '$createdAt' },
                         year: { $year: '$createdAt' }
                     },
-                    revenue: { $sum: '$amount' },
-                    originalRevenue: { $sum: '$originalAmount' },
-                    discountTotal: { $sum: '$discountAmount' },
+                    revenue: { $sum: '$rental.totalPrice' },
+                    originalRevenue: { $sum: '$rental.originalPrice' },
+                    discountTotal: { 
+                        $sum: { 
+                            $subtract: ['$rental.originalPrice', '$rental.totalPrice'] 
+                        }
+                    },
                     totalRentals: { $sum: 1 },
                     carTypes: { 
                         $addToSet: {
@@ -80,6 +84,7 @@ const getMonthlyRevenue = async (req, res) => {
 
         res.json(formattedData);
     } catch (error) {
+        console.error('Error in getMonthlyRevenue:', error);
         res.status(500).json({ message: error.message });
     }
 };

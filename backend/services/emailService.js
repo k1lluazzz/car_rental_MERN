@@ -1,17 +1,30 @@
 const nodemailer = require('nodemailer');
 
-class EmailService {
-    constructor() {
-        this.transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_APP_PASSWORD
-            }
-        });
-    }
+class EmailService {    constructor() {
+        try {
+            this.transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_APP_PASSWORD
+                }
+            });
+            
+            // Verify email configuration on startup
+            this.transporter.verify((error, success) => {
+                if (error) {
+                    console.error('Email service configuration error:', error);
+                } else {
+                    console.log('Email service is ready to send messages');
+                }
+            });
+        } catch (error) {
+            console.error('Failed to initialize email service:', error);
+        }
+    }    async sendInvoiceEmail(userEmail, rental, payment, retryCount = 0) {
+        const maxRetries = 3;
+        const retryDelay = 5000; // 5 seconds
 
-    async sendInvoiceEmail(userEmail, rental, payment) {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: userEmail,
@@ -47,11 +60,29 @@ class EmailService {
         };
 
         try {
+            console.log(`Attempting to send invoice email to ${userEmail} (attempt ${retryCount + 1}/${maxRetries + 1})`);
             await this.transporter.sendMail(mailOptions);
-            console.log('Invoice email sent successfully');
+            console.log(`Invoice email sent successfully to ${userEmail} for order ${payment.orderId}`);
             return true;
         } catch (error) {
-            console.error('Error sending invoice email:', error);
+            console.error(`Error sending invoice email (attempt ${retryCount + 1}/${maxRetries + 1}):`, {
+                error: error.message,
+                userEmail,
+                orderId: payment.orderId,
+                stack: error.stack
+            });
+
+            if (retryCount < maxRetries) {
+                console.log(`Retrying email send in ${retryDelay/1000} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                return this.sendInvoiceEmail(userEmail, rental, payment, retryCount + 1);
+            }
+
+            // If all retries failed
+            console.error(`Failed to send invoice email after ${maxRetries + 1} attempts`, {
+                userEmail,
+                orderId: payment.orderId
+            });
             return false;
         }
     }

@@ -86,10 +86,13 @@ router.get('/vnpay_return', async (req, res) => {
                 // Update rental status
                 rental.status = 'completed';
                 await rental.save();
-                
-                // Send invoice email
-                await emailService.sendInvoiceEmail(rental.userId.email, rental, payment);
-                  // Redirect to success page with orderId
+                  // Send invoice email
+                const emailSent = await emailService.sendInvoiceEmail(rental.userId.email, rental, payment);
+                if (!emailSent) {
+                    console.warn(`Failed to send invoice email for order ${orderId}. Payment was successful, but email delivery failed.`);
+                    // TODO: Consider implementing a background job to retry failed emails
+                }
+                // Redirect to success page with orderId
                 return res.redirect(`${process.env.FRONTEND_URL}/payment/status?orderId=${orderId}`);
             } catch (error) {
                 console.error('Error processing successful payment:', error);

@@ -9,6 +9,7 @@ const {
 } = require('../controllers/rentalController');
 const { authenticateToken, isAdmin } = require('../middleware/authMiddleware');
 const Rental = require('../models/Rental');
+const Car = require('../models/Car'); // Import Car model
 const router = express.Router();
 
 // Admin routes
@@ -19,6 +20,66 @@ router.patch('/:id/status', authenticateToken, isAdmin, updateRentalStatus);
 router.get('/my-rentals', authenticateToken, getUserRentals);
 router.post('/:id/return', authenticateToken, returnCar);
 router.post('/:id/review', authenticateToken, addReview);
+
+router.post('/:id/change-car', authenticateToken, async (req, res) => {
+    try {
+        const { carId, startDate, endDate } = req.body;
+        if (!carId) {
+            return res.status(400).json({ message: 'Car ID is required' });
+        }
+
+        const oldRental = await Rental.findById(req.params.id);
+        if (!oldRental) {
+            return res.status(404).json({ message: 'Rental not found' });
+        }
+
+        // Verify ownership
+        if (oldRental.userId.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const newStartDate = startDate ? new Date(startDate) : oldRental.startDate;
+        const newEndDate = endDate ? new Date(endDate) : oldRental.endDate;
+
+        // Check if the car is available for these dates
+        const isAvailable = await Rental.isCarAvailable(carId, newStartDate, newEndDate);
+        if (!isAvailable) {
+            return res.status(400).json({ message: 'Selected car is not available for these dates' });
+        }
+
+        // Update the current rental to use the new car and dates
+        oldRental.car = carId;
+        oldRental.startDate = newStartDate;
+        oldRental.endDate = newEndDate;
+        oldRental.status = 'unpaid';  // Reset to unpaid since it's a new car and possibly new duration
+        
+        // Recalculate duration and prices
+        const start = new Date(newStartDate);
+        const end = new Date(newEndDate);
+        const durationMs = end.getTime() - start.getTime();
+        const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+        
+        const car = await Car.findById(carId);
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
+        
+        oldRental.durationInDays = durationDays;
+        oldRental.originalPrice = car.pricePerDay * durationDays;
+        oldRental.totalPrice = car.discount > 0 
+            ? oldRental.originalPrice * (1 - car.discount / 100) 
+            : oldRental.originalPrice;
+        oldRental.totalAmount = oldRental.totalPrice;
+
+        await oldRental.save();
+
+        const updatedRental = await Rental.findById(oldRental._id).populate('car');
+        res.json(updatedRental);
+    } catch (err) {
+        console.error('Error changing car:', err);
+        res.status(500).json({ message: err.message });
+    }
+});
 router.post('/book', authenticateToken, async (req, res) => {
     const { car: carId, userName, startDate, endDate, originalPrice, totalPrice, durationInDays, discount } = req.body;
     try {

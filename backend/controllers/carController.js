@@ -1,9 +1,9 @@
 const Car = require('../models/Car');
 const { v2: cloudinary } = require('cloudinary');
+const Rental = require('../models/Rental');
 
 // Function to calculate total trips for a car
 const calculateTotalTrips = async (carId) => {
-    const Rental = require('../models/Rental');
     return await Rental.countDocuments({
         car: carId,
         status: { $in: ['completed', 'returned'] }
@@ -29,7 +29,12 @@ const updateCarStatistics = async (carId) => {
 // Get all cars
 const getAllCars = async (req, res) => {
     try {
-        const { location, fuelType, seats, name, brand } = req.query;
+        const { 
+            location, fuelType, seats, name, brand, 
+            minPrice, maxPrice, transmission,
+            startDate, endDate 
+        } = req.query;
+        
         const filter = {};
 
         if (location) {
@@ -42,6 +47,41 @@ const getAllCars = async (req, res) => {
         if (seats) filter.seats = parseInt(seats, 10);
         if (name) filter.name = { $regex: name, $options: 'i' };
         if (brand) filter.brand = { $regex: brand, $options: 'i' };
+        if (transmission) filter.transmission = transmission;
+        
+        // Add price range filter
+        if (minPrice || maxPrice) {
+            filter.pricePerDay = {};
+            if (minPrice) filter.pricePerDay.$gte = parseInt(minPrice);
+            if (maxPrice) filter.pricePerDay.$lte = parseInt(maxPrice);
+        }
+
+        // Add availability filter based on dates
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            // Find cars that don't have overlapping rentals
+            filter.$or = [
+                { 
+                    _id: {
+                        $nin: await Rental.distinct('car', {
+                            $and: [
+                                { status: { $nin: ['cancelled', 'rejected'] } },
+                                {
+                                    $or: [
+                                        {
+                                            startDate: { $lte: end },
+                                            endDate: { $gte: start }
+                                        }
+                                    ]
+                                }
+                            ]
+                        })
+                    }
+                }
+            ];
+        }
 
         // Get all cars including reviews
         const cars = await Car.find(filter);
