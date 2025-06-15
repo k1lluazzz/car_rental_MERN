@@ -8,12 +8,12 @@ import {
   Paper,
   Chip,
   Button,
-
   Card,
   CardMedia,
   Skeleton,
   Rating,
-
+  Divider,
+  Stack,
 } from "@mui/material";
 import {
   DirectionsCar,
@@ -22,9 +22,13 @@ import {
   Speed,
   ArrowBack,
   LocationOn,
+  Star,
+  DriveEta,
 } from "@mui/icons-material";
 import axios from "axios";
 import BookingForm from "../components/BookingForm";
+import RentalSchedule from "../components/RentalSchedule";
+import CarReviews from "../components/CarReviews";
 
 const CarDetailPage = () => {
   const { id } = useParams();
@@ -33,6 +37,7 @@ const CarDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [similarCars, setSimilarCars] = useState([]);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -69,7 +74,7 @@ const CarDetailPage = () => {
   }, [car]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   if (loading) {
@@ -128,7 +133,6 @@ const CarDetailPage = () => {
         <Grid item xs={12} md={7}>
           <Card
             sx={{
-              
               display: "flex",
               flexDirection: "column",
               borderRadius: 2,
@@ -138,7 +142,6 @@ const CarDetailPage = () => {
           >
             <CardMedia
               component="img"
-        
               image={car.image}
               alt={car.name}
               sx={{ objectFit: "contain" }}
@@ -160,7 +163,6 @@ const CarDetailPage = () => {
             >
               {car.pricePerDay?.toLocaleString()}đ/ngày
             </Typography>
-
             <Box sx={{ mt: 3 }}>
               <Grid container spacing={2}>
                 {features.map((feature, index) => (
@@ -181,7 +183,6 @@ const CarDetailPage = () => {
                 ))}
               </Grid>
             </Box>
-
             <Box sx={{ mt: 3 }}>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                 Địa điểm
@@ -192,36 +193,54 @@ const CarDetailPage = () => {
                 variant="outlined"
                 sx={{ mt: 1 }}
               />
-            </Box>
-
+            </Box>{" "}
             {/* Hiển thị đánh giá và số chuyến */}
             <Box sx={{ mt: 3 }}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Paper sx={{ p: 2, bgcolor: "background.default" }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Đánh giá trung bình
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                      <Rating
-                        value={car.rating || 0}
-                        precision={0.5}
-                        readOnly
-                      />
-                      <Typography variant="body2" sx={{ ml: 1 }}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      bgcolor: "background.default",
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Star color="warning" />
+                      <Typography variant="h6">
+                        {car.rating?.toFixed(1) || "0"}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
                         ({car.totalRatings || 0} đánh giá)
                       </Typography>
-                    </Box>
+                    </Stack>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
-                  <Paper sx={{ p: 2, bgcolor: "background.default" }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Số chuyến đã thực hiện
-                    </Typography>
-                    <Typography variant="h6" sx={{ mt: 1 }}>
-                      {car.trips || 0} chuyến
-                    </Typography>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      bgcolor: "background.default",
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <DriveEta />
+                      <Typography variant="h6">{car.trips || 0}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        chuyến
+                      </Typography>
+                    </Stack>
                   </Paper>
                 </Grid>
               </Grid>
@@ -235,49 +254,23 @@ const CarDetailPage = () => {
                 />
               </Box>
             )}
-            {/* Hiển thị danh sách đánh giá */}
-            {car.reviews && car.reviews.length > 0 && (
-              <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                  Đánh giá từ khách hàng
-                </Typography>
-                <Grid container spacing={2}>
-                  {car.reviews.map((review, index) => (
-                    <Grid item xs={12} key={index}>
-                      <Paper sx={{ p: 2 }}>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                        >
-                          <Rating value={review.rating} readOnly size="small" />
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ ml: 2 }}
-                          >
-                            {new Date(review.date).toLocaleDateString("vi-VN")}
-                          </Typography>
-                        </Box>
-                        {review.comment && (
-                          <Typography variant="body2" color="text.secondary">
-                            {review.comment}
-                          </Typography>
-                        )}
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            )}
-
-            <Button
-              variant="contained"
-              size="large"
-              fullWidth
-              sx={{ mt: 4 }}
-              onClick={() => setShowBookingForm(true)}
-            >
-              Đặt xe ngay
-            </Button>
+            <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
+              <Button
+                variant="contained"
+                size="large"
+                sx={{ flex: 1 }}
+                onClick={() => setShowBookingForm(true)}
+              >
+                Đặt xe ngay
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => setShowSchedule(true)}
+              >
+                Xem lịch thuê
+              </Button>
+            </Box>
           </Box>
         </Grid>
       </Grid>
@@ -294,6 +287,14 @@ const CarDetailPage = () => {
           />
         </Paper>
       )}
+
+      {/* Reviews Section */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom fontWeight="bold">
+          Đánh giá từ khách hàng
+        </Typography>
+        <CarReviews reviews={car.reviews} loading={loading} />
+      </Box>
 
       {/* Similar Cars Section */}
       {similarCars.length > 0 && (
@@ -336,6 +337,12 @@ const CarDetailPage = () => {
           </Grid>
         </Box>
       )}
+
+      <RentalSchedule
+        carId={id}
+        open={showSchedule}
+        onClose={() => setShowSchedule(false)}
+      />
     </Container>
   );
 };
